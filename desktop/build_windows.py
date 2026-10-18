@@ -23,6 +23,7 @@ def generate_spec_file(output_spec_path: str = None) -> str:
         output_spec_path = os.path.join(DESKTOP_DIR, "GSense.spec")
 
     app_py_path = os.path.join(DESKTOP_DIR, "app.py").replace("\\", "/")
+    desktop_path = DESKTOP_DIR.replace("\\", "/")
 
     spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
 # G-SENSE Standalone Windows Executable Specification
@@ -31,7 +32,7 @@ import os
 import sys
 
 block_cipher = None
-desktop_path = r'{DESKTOP_DIR}'
+desktop_path = r'{desktop_path}'
 
 a = Analysis(
     ['{app_py_path}'],
@@ -71,13 +72,13 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch='x86_64',
+    target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
     icon=None,

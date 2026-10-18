@@ -130,9 +130,14 @@ def run_tests():
     print("Test 7: SQLite Local Storage Persistence & Hydration...")
     from storage import DesktopStorage
     import tempfile
-    temp_db = os.path.join(tempfile.gettempdir(), "test_gsense.db")
+    import gc
+
+    temp_db = os.path.join(tempfile.gettempdir(), f"test_gsense_{os.getpid()}.db")
     if os.path.exists(temp_db):
-        os.remove(temp_db)
+        try:
+            os.remove(temp_db)
+        except OSError:
+            pass
 
     test_storage = DesktopStorage(db_path=temp_db)
     test_storage.set_setting("run_at_startup", "true")
@@ -156,8 +161,13 @@ def run_tests():
 
     test_storage.purge_all()
     assert_true(len(test_storage.get_all_events()) == 0, "Expected 0 events after SQLite purge")
+    del test_storage
+    gc.collect()
     if os.path.exists(temp_db):
-        os.remove(temp_db)
+        try:
+            os.remove(temp_db)
+        except OSError:
+            pass
     print("  ✓ SQLite persistence, settings store, and purge roundtrip verified.\n")
 
     # Test 8: Windows Build Spec Generation & Module Verification
