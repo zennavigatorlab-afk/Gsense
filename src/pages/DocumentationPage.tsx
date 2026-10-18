@@ -1,0 +1,363 @@
+import React, { useState } from 'react';
+import {
+  FileText,
+  Database,
+  Code,
+  Github,
+  Server,
+  Search,
+  Check,
+  Copy,
+  Terminal,
+  ShieldAlert
+} from 'lucide-react';
+
+export const DocumentationPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'quickstart' | 'supabase' | 'github' | 'vercel' | 'gsc'>('quickstart');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopy = (key: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const sqlMigrationCode = `-- ==============================================================================
+-- G-SENSE Database Schema & Row-Level Security (RLS) Migrations
+-- Migration: 20261018000000_gsense_schema.sql
+-- ==============================================================================
+
+-- 1. Profiles Table
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT,
+  display_name TEXT,
+  avatar_url TEXT,
+  learning_status TEXT DEFAULT 'active' CHECK (learning_status IN ('active', 'paused', 'disabled')),
+  created_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own profile"
+  ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update their own profile"
+  ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+-- 2. User Preferences Table
+CREATE TABLE IF NOT EXISTS public.user_preferences (
+  user_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
+  assistance_level TEXT DEFAULT 'balanced' CHECK (assistance_level IN ('step_by_step', 'hints_only', 'minimal')),
+  interaction_pace TEXT DEFAULT 'standard' CHECK (interaction_pace IN ('relaxed', 'standard', 'fast')),
+  hesitation_threshold_ms INTEGER DEFAULT 8000,
+  repeat_attempts_trigger INTEGER DEFAULT 3,
+  camera_sensing_enabled BOOLEAN DEFAULT FALSE,
+  theme TEXT DEFAULT 'system' CHECK (theme IN ('light', 'dark', 'system')),
+  updated_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own preferences"
+  ON public.user_preferences FOR ALL USING (auth.uid() = user_id);
+
+-- 3. Interaction Events Table (Zero raw text/passwords)
+CREATE TABLE IF NOT EXISTS public.interaction_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  session_id TEXT NOT NULL,
+  screen_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  component_type TEXT NOT NULL,
+  attempt_count INTEGER DEFAULT 1,
+  hesitation_ms INTEGER DEFAULT 0,
+  is_correction BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.interaction_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own events"
+  ON public.interaction_events FOR ALL USING (auth.uid() = user_id);
+
+-- 4. Learning Summaries Table
+CREATE TABLE IF NOT EXISTS public.learning_summaries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  computed_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  total_events_analyzed INTEGER DEFAULT 0,
+  avg_hesitation_ms NUMERIC(10, 2) DEFAULT 0,
+  correction_rate NUMERIC(5, 4) DEFAULT 0,
+  repeat_attempt_rate NUMERIC(5, 4) DEFAULT 0,
+  confidence_score NUMERIC(5, 4) DEFAULT 0,
+  recommended_assistance_level TEXT
+);
+
+ALTER TABLE public.learning_summaries ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own summaries"
+  ON public.learning_summaries FOR ALL USING (auth.uid() = user_id);
+
+-- 5. Assistance Feedback Table
+CREATE TABLE IF NOT EXISTS public.assistance_feedback (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  prompt_id TEXT NOT NULL,
+  screen_id TEXT NOT NULL,
+  trigger_reason TEXT NOT NULL,
+  was_helpful BOOLEAN NOT NULL,
+  user_comment TEXT,
+  created_at TIMESTAMPTZ DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.assistance_feedback ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own feedback"
+  ON public.assistance_feedback FOR ALL USING (auth.uid() = user_id);`;
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-12">
+      {/* Header */}
+      <div className="max-w-3xl space-y-4">
+        <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+          Developer & Engineering Manual
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white [text-wrap:balance]">
+          Technical Documentation
+        </h1>
+        <p className="text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+          Comprehensive guides covering the local development environment, Supabase database schemas, GitHub version control, Vercel edge deployment, and Google Search Console verification.
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-px">
+        {[
+          { id: 'quickstart', label: '1. Quickstart & Local Run' },
+          { id: 'supabase', label: '2. Supabase SQL & RLS' },
+          { id: 'github', label: '3. GitHub Upload Guide' },
+          { id: 'vercel', label: '4. Vercel Deployment' },
+          { id: 'gsc', label: '5. Google Search Console' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-4 py-2.5 text-xs font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer border-b-2 ${
+              activeTab === tab.id
+                ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-semibold'
+                : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab 1: Quickstart */}
+      {activeTab === 'quickstart' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Running G-SENSE Locally
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              Execute the following shell commands to install dependencies, run the test suite, and launch the Vite development server:
+            </p>
+            <div className="relative rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 overflow-x-auto">
+              <button
+                onClick={() =>
+                  handleCopy(
+                    'quickstart_cmd',
+                    `npm install\nnpm test\nnpm run dev`
+                  )
+                }
+                className="absolute top-3 right-3 rounded bg-slate-800 p-1.5 text-slate-300 hover:bg-slate-700"
+                title="Copy commands"
+              >
+                {copiedKey === 'quickstart_cmd' ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+              </button>
+              <code>
+                # 1. Install dependencies<br />
+                npm install<br /><br />
+                # 2. Run engine automated test suite<br />
+                npm test<br /><br />
+                # 3. Start local development server on port 3000<br />
+                npm run dev
+              </code>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              Environment Variables (.env.local)
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              Create a <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">.env.local</code> file in the project root:
+            </p>
+            <div className="rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 overflow-x-auto">
+              <code>
+                APP_URL="http://localhost:3000"<br />
+                VITE_SUPABASE_URL="https://your-supabase-project.supabase.co"<br />
+                VITE_SUPABASE_ANON_KEY="eyJhbGciOi..."
+              </code>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
+              <ShieldAlert className="h-4 w-4 shrink-0" />
+              <span>Security Rule: Never place the Supabase service_role key into client environment variables.</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: Supabase */}
+      {activeTab === 'supabase' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Supabase Database Migrations
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Located at: <code className="font-mono">supabase/migrations/20261018000000_gsense_schema.sql</code>
+                </p>
+              </div>
+              <button
+                onClick={() => handleCopy('sql', sqlMigrationCode)}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                {copiedKey === 'sql' ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copiedKey === 'sql' ? 'Copied' : 'Copy SQL'}</span>
+              </button>
+            </div>
+
+            <div className="rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 max-h-96 overflow-y-auto">
+              <pre>{sqlMigrationCode}</pre>
+            </div>
+
+            <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+              <div className="font-semibold text-slate-800 dark:text-slate-200">How to apply in Supabase:</div>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Log in to your Supabase Project Dashboard (<code className="font-mono">supabase.com</code>).</li>
+                <li>Navigate to the <strong>SQL Editor</strong> tab on the left sidebar.</li>
+                <li>Click <strong>New query</strong> and paste the migration SQL above.</li>
+                <li>Click <strong>Run</strong>. All 5 tables with Row-Level Security policies will be provisioned.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: GitHub */}
+      {activeTab === 'github' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Uploading G-SENSE to GitHub
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              Follow these commands to push the project repository to GitHub:
+            </p>
+            <div className="relative rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 overflow-x-auto">
+              <button
+                onClick={() =>
+                  handleCopy(
+                    'gh_cmd',
+                    `git init\ngit add .\ngit commit -m "feat: complete initial release of G-SENSE AdaptiveAssistant"\ngit branch -M main\ngit remote add origin https://github.com/YOUR_USERNAME/g-sense.git\ngit push -u origin main`
+                  )
+                }
+                className="absolute top-3 right-3 rounded bg-slate-800 p-1.5 text-slate-300 hover:bg-slate-700"
+                title="Copy Git commands"
+              >
+                {copiedKey === 'gh_cmd' ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+              </button>
+              <code>
+                # Initialize Git repository<br />
+                git init<br /><br />
+                # Stage all source files (.gitignore prevents secrets or node_modules)<br />
+                git add .<br /><br />
+                # Commit project files<br />
+                git commit -m "feat: complete initial release of G-SENSE AdaptiveAssistant"<br /><br />
+                # Set default branch to main<br />
+                git branch -M main<br /><br />
+                # Attach your GitHub remote repository<br />
+                git remote add origin https://github.com/YOUR_USERNAME/g-sense.git<br /><br />
+                # Push main branch<br />
+                git push -u origin main
+              </code>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 4: Vercel */}
+      {activeTab === 'vercel' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Deploying G-SENSE to Vercel
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              G-SENSE is pre-configured with a root <code className="font-mono">vercel.json</code> supporting SPA URL rewrites and security response headers.
+            </p>
+
+            <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+              <div className="font-semibold text-slate-900 dark:text-white">Step-by-step Vercel Import:</div>
+              <ol className="list-decimal list-inside space-y-2">
+                <li>Visit <a href="https://vercel.com/new" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">vercel.com/new</a> and log in.</li>
+                <li>Import your GitHub repository (<code className="font-mono">YOUR_USERNAME/g-sense</code>).</li>
+                <li>Framework Preset: Vercel will automatically detect <strong>Vite</strong>.</li>
+                <li>Build Command: <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">npm run build</code></li>
+                <li>Output Directory: <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">dist</code></li>
+                <li>Configure Environment Variables:
+                  <ul className="list-disc list-inside ml-4 mt-1 space-y-1 text-slate-500 dark:text-slate-400">
+                    <li><code className="font-mono">VITE_SUPABASE_URL</code></li>
+                    <li><code className="font-mono">VITE_SUPABASE_ANON_KEY</code></li>
+                    <li><code className="font-mono">APP_URL</code> (Your Vercel domain e.g. <code className="font-mono">https://g-sense.vercel.app</code>)</li>
+                  </ul>
+                </li>
+                <li>Click <strong>Deploy</strong>.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 5: Google Search Console */}
+      {activeTab === 'gsc' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Google Search Console (GSC) Integration Guide
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              The public website includes canonical tags, OpenGraph metadata, a valid <code className="font-mono">sitemap.xml</code>, and <code className="font-mono">robots.txt</code> with indexing prevention on private profile pages.
+            </p>
+
+            <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+              <div className="font-semibold text-slate-900 dark:text-white">Verification & Submission Procedure:</div>
+              <ol className="list-decimal list-inside space-y-2">
+                <li>Go to <a href="https://search.google.com/search-console" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Google Search Console</a>.</li>
+                <li>Click <strong>Add Property</strong> and select <strong>Domain</strong> (or URL Prefix with your production HTTPS URL).</li>
+                <li>Verify ownership:
+                  <ul className="list-disc list-inside ml-4 mt-1 text-slate-500 dark:text-slate-400">
+                    <li><strong>DNS Verification (Recommended):</strong> Add the TXT record provided by Google to your domain registrar (e.g., Cloudflare, Namecheap, Google Domains).</li>
+                    <li><strong>HTML Tag:</strong> Place the provided meta tag into <code className="font-mono">index.html</code>.</li>
+                  </ul>
+                </li>
+                <li>Once verified, navigate to <strong>Sitemaps</strong> in the left sidebar.</li>
+                <li>Enter <code className="font-mono text-blue-600 dark:text-blue-400">sitemap.xml</code> and click <strong>Submit</strong>.</li>
+                <li>Use the <strong>URL Inspection</strong> tool to inspect <code className="font-mono">https://your-domain.com/</code> and request indexing once live.</li>
+              </ol>
+            </div>
+
+            <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 text-xs text-slate-500 dark:text-slate-400">
+              Honest status: Google Search Console requires domain ownership verification and active web crawling; pages cannot be marked as indexed until domain verification is completed by the domain administrator.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

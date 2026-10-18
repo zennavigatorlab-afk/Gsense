@@ -1,0 +1,3 @@
+# G-SENSE Desktop Dependencies
+# Standard library Tkinter and SQLite3 are bundled with standard Python 3.10+
+pyinstaller>=6.0.0

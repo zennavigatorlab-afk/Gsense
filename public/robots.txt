@@ -1,0 +1,16 @@
+# G-SENSE robots.txt
+User-agent: *
+Allow: /
+Allow: /features
+Allow: /how-it-works
+Allow: /downloads
+Allow: /docs
+Allow: /privacy
+Allow: /contact
+
+# Private/Authenticated paths
+Disallow: /profile
+Disallow: /dashboard/data-export
+Disallow: /api/
+
+Sitemap: https://g-sense.app/sitemap.xml
