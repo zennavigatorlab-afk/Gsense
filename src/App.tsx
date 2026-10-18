@@ -18,6 +18,8 @@ import { ContactPage } from './pages/ContactPage';
 import { AuthPage } from './pages/AuthPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { DashboardPage } from './pages/DashboardPage';
+import { ResearchPage } from './pages/ResearchPage';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 import {
   getLocalProfile,
@@ -221,7 +223,13 @@ export default function App() {
         {currentPage === 'dashboard' && (
           <DashboardPage onNavigate={handleNavigate} userId={profile.id} />
         )}
+        {currentPage === 'research' && (
+          <ResearchPage onNavigate={handleNavigate} userId={profile.id} />
+        )}
       </main>
+
+      {/* Non-intrusive Offline Connectivity Notification */}
+      <OfflineIndicator />
 
       {/* Non-intrusive Adaptive Assistant Guidance Overlay */}
       <AdaptiveAssistantOverlay

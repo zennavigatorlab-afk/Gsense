@@ -412,6 +412,7 @@ export class GSenseBrowserEngine {
       appName: 'G-SENSE',
       tagline: 'AdaptiveAssistant',
       meaning: 'G = Good; SENSE = learning interaction patterns',
+      privacyGuarantee: '100% Client-Side. Zero raw text, zero keystroke logging, zero passwords, zero remote transmission without explicit user export.',
       exportedAt: new Date().toISOString(),
       summary,
       assistanceStats: stats,
@@ -423,6 +424,23 @@ export class GSenseBrowserEngine {
       feedback,
     };
     return JSON.stringify(bundle, null, 2);
+  }
+
+  public computeMetrics() {
+    const summary = this.computeSummary();
+    const stats = this.getAssistanceStats();
+    return {
+      totalEvents: summary.totalEvents,
+      totalOffered: stats.totalOffered,
+      maturityTier: summary.sampleStatusLabel,
+      sampleSize: summary.sampleSize,
+      summary,
+      stats,
+    };
+  }
+
+  public purgeAllData(): void {
+    this.clearAllData();
   }
 
   public exportEventsAsJson(): string {

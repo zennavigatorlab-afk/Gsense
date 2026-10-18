@@ -55,10 +55,18 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               </li>
               <li>
                 <button
+                  onClick={() => onNavigate('research')}
+                  className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer text-blue-600 dark:text-blue-400 font-medium"
+                >
+                  Adaptive Interaction Research
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => onNavigate('downloads')}
                   className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
                 >
-                  Downloads & System Specs
+                  Downloads &amp; System Specs
                 </button>
               </li>
             </ul>

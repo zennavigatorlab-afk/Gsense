@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background container -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="#334155" stroke-width="4" stroke-opacity="0.4" />
+
+  <!-- Inner brain/circuit container -->
+  <rect x="72" y="72" width="368" height="368" rx="72" fill="#1e293b" fill-opacity="0.6" stroke="#475569" stroke-width="6" />
+
+  <!-- 'G' outer circuit contour -->
+  <path d="M 352 184 C 328 136 264 128 216 144 C 160 163 136 224 144 280 C 152 339 208 376 272 368 C 328 360 360 316 360 272 H 256"
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="32"
+        stroke-linecap="round"
+        stroke-linejoin="round" />
+
+  <!-- Subtle interconnect pulse line -->
+  <path d="M 256 272 V 192"
+        fill="none"
+        stroke="#60a5fa"
+        stroke-width="20"
+        stroke-dasharray="16 16"
+        stroke-linecap="round" />
+
+  <!-- Neural Synapse Circuit Nodes with Glow -->
+  <g filter="url(#glow)">
+    <circle cx="256" cy="272" r="26" fill="#3b82f6" />
+    <circle cx="360" cy="272" r="22" fill="#60a5fa" />
+    <circle cx="352" cy="184" r="22" fill="#60a5fa" />
+    <circle cx="216" cy="144" r="22" fill="#60a5fa" />
+    <circle cx="144" cy="280" r="22" fill="#60a5fa" />
+    <circle cx="256" cy="192" r="18" fill="#93c5fd" />
+  </g>
+
+  <!-- Highlighting inner white cores -->
+  <circle cx="256" cy="272" r="12" fill="#ffffff" />
+  <circle cx="360" cy="272" r="10" fill="#ffffff" />
+  <circle cx="352" cy="184" r="10" fill="#ffffff" />
+  <circle cx="216" cy="144" r="10" fill="#ffffff" />
+  <circle cx="144" cy="280" r="10" fill="#ffffff" />
+  <circle cx="256" cy="192" r="8" fill="#ffffff" />
+</svg>

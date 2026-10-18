@@ -17,6 +17,7 @@ import {
   AlertCircle,
   HardDrive
 } from 'lucide-react';
+import { PWAInstallButton } from '../components/PWAInstallButton';
 
 interface DownloadsPageProps {
   onNavigate: (page: string) => void;
@@ -169,14 +170,15 @@ exe = EXE(
             </div>
           </div>
 
-          <div className="pt-6">
+          <div className="pt-6 space-y-2">
             <button
               onClick={() => onNavigate('dashboard')}
               className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-xs"
             >
-              <span>Use Web Version Now</span>
+              <span>Launch Web Assistant Now</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
+            <PWAInstallButton variant="card" />
           </div>
         </div>
 
@@ -297,24 +299,25 @@ exe = EXE(
               Android Application
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-              Architecture for touch-interaction learning scoped exclusively inside the app. Respects Android battery, background execution limits, and user privacy.
+              Native Kotlin architecture phase plus <strong>live installable Progressive Web App (PWA)</strong> for Android Chrome (including Xiaomi Redmi 9 / MIUI). All touch telemetry is scoped exclusively inside the app.
             </p>
 
             <div className="text-xs space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 text-slate-600 dark:text-slate-400">
-              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Target Requirements:</div>
-              <div>• Android 12+ (API Level 31+)</div>
-              <div>• Jetpack Compose & Kotlin Coroutines</div>
+              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Android Availability:</div>
+              <div>• <strong>PWA Ready:</strong> Installable now via Chrome on Android</div>
+              <div>• <strong>Native Kotlin:</strong> Architecture phase (API Level 31+)</div>
               <div>• Scoped strictly inside the host application</div>
               <div>• Zero cross-app keylogging or Accessibility abuse</div>
             </div>
           </div>
 
-          <div className="pt-6">
+          <div className="pt-6 space-y-2">
+            <PWAInstallButton variant="card" />
             <button
-              onClick={() => onNavigate('docs')}
+              onClick={() => onNavigate('research')}
               className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
-              <span>Read Android Architecture</span>
+              <span>Adaptive Interaction Research</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -528,6 +531,55 @@ exe = EXE(
               <div>python test_desktop.py</div>
               <div>python build_windows.py --build</div>
               <div className="text-slate-400"># Output: dist/GSense-AdaptiveAssistant.exe</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Android PWA Installation Guide (Redmi 9 / Chrome & Android Browsers) */}
+        <div className="rounded-lg border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Smartphone className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <span>Android PWA Installation Steps (Google Chrome on Android / Xiaomi Redmi 9)</span>
+            </h4>
+            <span className="text-[11px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded">
+              Standalone PWA Available
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            G-SENSE complies with the W3C Web App Manifest specification and service worker caching standards. On your Android smartphone (tested on Chrome with Redmi 9 / MIUI), install G-SENSE with one tap to run full-screen without URL bars:
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="rounded-lg bg-white dark:bg-slate-900 p-4 border border-purple-200/60 dark:border-purple-900/40 space-y-1.5">
+              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[10px] text-white">1</span>
+                <span>Open in Mobile Chrome</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px]">
+                Navigate to <code>https://gsense.vercel.app/</code> or your active deployment domain in Chrome on your Redmi 9.
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white dark:bg-slate-900 p-4 border border-purple-200/60 dark:border-purple-900/40 space-y-1.5">
+              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[10px] text-white">2</span>
+                <span>Tap Menu &gt; Install App</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px]">
+                Tap the three dots (⋮) in the top-right corner of Chrome, then tap <strong>&quot;Install app&quot;</strong> (or tap the <strong>Install PWA</strong> button in the navigation bar).
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white dark:bg-slate-900 p-4 border border-purple-200/60 dark:border-purple-900/40 space-y-1.5">
+              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[10px] text-white">3</span>
+                <span>Redmi 9 / MIUI Setting</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 text-[11px]">
+                On Xiaomi MIUI, ensure Chrome is granted <em>&quot;Home screen shortcuts&quot;</em> in <em>Settings &gt; Apps &gt; Manage Apps &gt; Chrome &gt; Other Permissions</em>.
+              </p>
             </div>
           </div>
         </div>

@@ -9,11 +9,15 @@ import {
   Check,
   Copy,
   Terminal,
-  ShieldAlert
+  ShieldAlert,
+  Smartphone,
+  Download,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 
 export const DocumentationPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'quickstart' | 'supabase' | 'github' | 'vercel' | 'gsc' | 'windows'>('quickstart');
+  const [activeTab, setActiveTab] = useState<'quickstart' | 'supabase' | 'github' | 'vercel' | 'gsc' | 'windows' | 'pwa_android'>('quickstart');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleCopy = (key: string, text: string) => {
@@ -140,6 +144,7 @@ CREATE POLICY "Users can manage own feedback"
           { id: 'vercel', label: '4. Vercel Deployment' },
           { id: 'gsc', label: '5. Google Search Console' },
           { id: 'windows', label: '6. Windows Desktop & CI Build' },
+          { id: 'pwa_android', label: '7. Android PWA & Mobile Installation' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -415,6 +420,132 @@ CREATE POLICY "Users can manage own feedback"
                   python app.py                   # Launches Tkinter GUI<br />
                   python build_windows.py --build # Builds 64-bit EXE on Windows host
                 </code>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 7: Android PWA & Mobile Installation */}
+      {activeTab === 'pwa_android' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Smartphone className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Android PWA Installation &amp; Mobile Interaction Research
+                </h2>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                G-SENSE provides full Progressive Web App (PWA) support compliant with the W3C Web App Manifest specification, service worker offline shell caching, and standalone display mode across supported Android browsers (Google Chrome, Brave, Edge).
+              </p>
+            </div>
+
+            {/* Step-by-Step for Xiaomi Redmi 9 & Chrome on Android */}
+            <div className="rounded-lg border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 p-5 space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Download className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                <span>Installation Steps for Xiaomi Redmi 9 (Chrome on Android / MIUI)</span>
+              </h3>
+
+              <ol className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white font-mono text-[11px] font-bold">
+                    1
+                  </span>
+                  <div>
+                    <strong className="text-slate-900 dark:text-white">Open in Google Chrome:</strong> Launch Google Chrome on your Redmi 9 and open your live G-SENSE deployment URL (e.g. <code>https://gsense.vercel.app/</code>).
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white font-mono text-[11px] font-bold">
+                    2
+                  </span>
+                  <div>
+                    <strong className="text-slate-900 dark:text-white">Trigger Install:</strong> Tap the <strong>Install PWA</strong> button in the navigation bar, or tap Chrome&apos;s three vertical dots (<strong>⋮</strong>) in the top-right corner and select <strong>&quot;Install app&quot;</strong> or <strong>&quot;Add to Home screen&quot;</strong>.
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white font-mono text-[11px] font-bold">
+                    3
+                  </span>
+                  <div>
+                    <strong className="text-slate-900 dark:text-white">Confirm Installation:</strong> Tap <strong>Install</strong> on the browser confirmation modal. Android will create a standalone launcher icon with the official G-SENSE adaptive synapse mark.
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white font-mono text-[11px] font-bold">
+                    4
+                  </span>
+                  <div>
+                    <strong className="text-slate-900 dark:text-white">MIUI Permission Check (Redmi 9):</strong> If MIUI does not automatically place the icon on your home screen, go to your phone&apos;s <em>Settings &gt; Apps &gt; Manage Apps &gt; Chrome &gt; Other Permissions</em>, and ensure <strong>&quot;Home screen shortcuts&quot;</strong> is set to <strong>Always allow</strong>.
+                  </div>
+                </li>
+              </ol>
+            </div>
+
+            {/* Offline Fallback & Cache Scoping */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Service Worker Caching &amp; Offline Fallback Architecture
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                The service worker is configured via <code>vite-plugin-pwa</code> using Google Workbox. It precaches the static application shell (HTML, CSS, JS chunks, and brand icon assets) and caches Google Fonts via a <code>CacheFirst</code> strategy.
+              </p>
+              <div className="p-3.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 space-y-1">
+                <div className="font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Privacy Invariant: Zero Sensitive Caching</span>
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  The Service Worker explicitly bypasses caching for all API routes (<code>/api/*</code>) and Supabase database/auth requests (<code>*.supabase.co</code>). User profiles, authentication tokens, and private telemetry are NEVER saved in the browser&apos;s service worker cache.
+                </p>
+              </div>
+            </div>
+
+            {/* Known Limitations */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <span>Known Limitations &amp; Security Boundaries</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3.5 bg-slate-50 dark:bg-slate-950">
+                  <div className="font-semibold text-slate-900 dark:text-white mb-1">
+                    1. Sandbox Isolation (No Cross-App Snooping)
+                  </div>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                    The PWA runs strictly inside the secure browser sandbox. It cannot track touches or inputs in other Android applications. In accordance with user privacy invariants, G-SENSE never accesses other apps, keystrokes, passwords, clipboard, or notifications.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3.5 bg-slate-50 dark:bg-slate-950">
+                  <div className="font-semibold text-slate-900 dark:text-white mb-1">
+                    2. Background Execution &amp; Doze Mode
+                  </div>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                    Android power management suspends Web Workers and timers when the PWA is backgrounded. G-SENSE uses the Page Visibility API to freeze dwell clocks so that backgrounding does not skew cognitive hesitation metrics.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3.5 bg-slate-50 dark:bg-slate-950">
+                  <div className="font-semibold text-slate-900 dark:text-white mb-1">
+                    3. MIUI Aggressive RAM Reclamation
+                  </div>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                    On devices like the Redmi 9 with 3GB/4GB RAM, MIUI may aggressively discard background tabs. G-SENSE saves all consented profile states to <code>localStorage</code> immediately to ensure zero state loss upon app resume.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3.5 bg-slate-50 dark:bg-slate-950">
+                  <div className="font-semibold text-slate-900 dark:text-white mb-1">
+                    4. iOS Safari Installation Flow
+                  </div>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                    WebKit on iOS does not support the Chromium <code>beforeinstallprompt</code> event. iOS users must use the native Safari Share sheet &gt; &quot;Add to Home Screen&quot;. In-app guidance is provided automatically.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

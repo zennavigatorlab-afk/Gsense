@@ -2,23 +2,35 @@
 <html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>G-SENSE — AdaptiveAssistant</title>
     <meta name="description" content="G-SENSE — AdaptiveAssistant. Learning interaction patterns to provide transparent, personalized interaction guidance without reading private content." />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://g-sense.app" />
     <meta name="google-site-verification" content="y7dA711cbtJ0OStNKa5L-Jwo5ck1XcVE_75tRQ9vg-s" />
 
+    <!-- PWA & Mobile Web Standards -->
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="G-SENSE" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
     <!-- OpenGraph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="G-SENSE" />
     <meta property="og:title" content="G-SENSE — AdaptiveAssistant" />
     <meta property="og:description" content="G-SENSE — AdaptiveAssistant. Learning interaction patterns to provide transparent, personalized interaction guidance without reading private content." />
+    <meta property="og:image" content="/pwa-512x512.png" />
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="G-SENSE — AdaptiveAssistant" />
     <meta name="twitter:description" content="G-SENSE — AdaptiveAssistant. Learning interaction patterns to provide transparent, personalized interaction guidance." />
+    <meta name="twitter:image" content="/pwa-512x512.png" />
 
     <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,7 +45,7 @@
       "name": "G-SENSE",
       "alternateName": "AdaptiveAssistant",
       "applicationCategory": "UtilitiesApplication",
-      "operatingSystem": "Web, Windows, Android (Planned)",
+      "operatingSystem": "Web, Android (PWA & Research), Windows",
       "description": "Adaptive interaction assistant that learns interaction patterns (repetition, hesitations, corrections) to deliver contextual hints and workflow simplification without recording private text or passwords.",
       "offers": {
         "@type": "Offer",
@@ -41,6 +53,7 @@
         "priceCurrency": "USD"
       },
       "featureList": [
+        "Progressive Web App with safe offline fallback",
         "In-app interaction pattern learning",
         "Transparent rule-based adaptation",
         "Hesitation and repeat-attempt detection",

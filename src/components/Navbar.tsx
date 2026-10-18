@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Logo } from './Logo';
 import { Moon, Sun, Menu, X, User as UserIcon, BarChart2 } from 'lucide-react';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface NavbarProps {
   currentPage: string;
@@ -23,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navLinks = [
     { id: 'features', label: 'Features' },
     { id: 'how-it-works', label: 'How It Works' },
+    { id: 'research', label: 'Research' },
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'downloads', label: 'Downloads' },
     { id: 'docs', label: 'Docs' },
@@ -67,7 +69,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Zone 3: Primary Action & Theme Toggle */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* PWA Install Button (automatically adapts/hides if already installed) */}
+          <PWAInstallButton variant="navbar" />
+
           {/* Theme Switcher */}
           <button
             onClick={onToggleTheme}
@@ -137,6 +142,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               Contact
             </button>
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <PWAInstallButton variant="card" />
+            </div>
           </div>
         </div>
       )}
