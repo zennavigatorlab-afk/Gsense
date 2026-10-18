@@ -116,13 +116,13 @@ export const DownloadsPage: React.FC<DownloadsPageProps> = ({ onNavigate }) => {
           <div className="pt-6 space-y-2">
             <button
               onClick={() => onNavigate('docs')}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors cursor-pointer"
             >
               <Terminal className="h-3.5 w-3.5" />
-              <span>Inspect Python Build Specs</span>
+              <span>Inspect Windows CI & Build Specs</span>
             </button>
             <div className="text-[11px] text-center text-slate-500 dark:text-slate-400">
-              Installer (.exe) compiled via certified CI. Source available in repo.
+              CI Workflow: <code>.github/workflows/windows_build.yml</code>
             </div>
           </div>
         </div>
@@ -165,24 +165,30 @@ export const DownloadsPage: React.FC<DownloadsPageProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Windows Build Instruction Callout */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+      {/* Windows CI & Source Build Callout */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-950 space-y-4">
+        <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Terminal className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <span>Building the Windows Desktop Software from Source</span>
+          <span>Windows Standalone Build Workflow & GitHub CI</span>
         </h3>
-        <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-          The desktop package is ready to run and build on any Windows machine with Python installed:
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          G-SENSE uses an automated GitHub Actions CI workflow running on <code>windows-latest</code> to verify tests, compile 64-bit binaries via PyInstaller, and generate downloadable release artifacts:
         </p>
-        <div className="rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 overflow-x-auto">
-          <code>
-            git clone &lt;repo-url&gt;<br />
-            cd desktop<br />
-            pip install -r requirements.txt<br />
-            python app.py                 # Launches the Desktop GUI<br />
-            python build_windows.py       # Prepares PyInstaller specification<br />
-            pyinstaller GSense.spec --clean
-          </code>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 overflow-x-auto space-y-1">
+            <div className="text-blue-400 font-bold mb-2"># Automated GitHub Actions Workflow</div>
+            <div>File: .github/workflows/windows_build.yml</div>
+            <div>Target: Windows 64-bit (x86_64)</div>
+            <div>Artifact: GSense-AdaptiveAssistant.exe</div>
+            <div>Checksum: dist/checksums.sha256</div>
+          </div>
+          <div className="rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 overflow-x-auto space-y-1">
+            <div className="text-blue-400 font-bold mb-2"># Local Windows Build Commands</div>
+            <div>cd desktop</div>
+            <div>pip install -r requirements.txt</div>
+            <div>python build_windows.py --build</div>
+            <div># Output placed in: dist/GSense-AdaptiveAssistant.exe</div>
+          </div>
         </div>
       </div>
     </div>

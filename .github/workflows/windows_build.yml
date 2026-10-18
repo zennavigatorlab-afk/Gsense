@@ -1,0 +1,87 @@
+name: Build G-SENSE Windows Executable
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Publish release asset if tag or dispatch'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build & Package 64-bit Windows EXE
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11 (x64)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r desktop/requirements.txt
+
+      - name: Run Automated Verification Tests
+        run: |
+          python desktop/test_desktop.py
+
+      - name: Generate Packaging Spec and Build Binary
+        run: |
+          python desktop/build_windows.py --build
+
+      - name: Validate Binary & Generate Checksum
+        shell: pwsh
+        run: |
+          $exePath = "dist/GSense-AdaptiveAssistant.exe"
+          if (!(Test-Path $exePath)) {
+            Write-Error "Build verification failed: $exePath does not exist!"
+            exit 1
+          }
+          $item = Get-Item $exePath
+          $sizeMb = [math]::Round($item.Length / 1MB, 2)
+          Write-Host "[✓] Executable verified: $exePath ($sizeMb MB)"
+          
+          $hash = (Get-FileHash -Path $exePath -Algorithm SHA256).Hash
+          Write-Host "[✓] SHA-256 Checksum: $hash"
+          "$hash  GSense-AdaptiveAssistant.exe" | Out-File -Encoding utf8 "dist/checksums.sha256"
+
+      - name: Upload Windows Executable Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GSense-AdaptiveAssistant-Windows-x64
+          path: |
+            dist/GSense-AdaptiveAssistant.exe
+            dist/checksums.sha256
+          retention-days: 30
+
+      - name: Publish to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.publish_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/GSense-AdaptiveAssistant.exe
+            dist/checksums.sha256
+          name: G-SENSE AdaptiveAssistant Desktop ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

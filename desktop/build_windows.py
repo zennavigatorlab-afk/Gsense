@@ -1,48 +1,63 @@
 """
-G-SENSE Windows Build & Packaging Script
-Prepares standalone executable using PyInstaller.
+G-SENSE Windows Build & Packaging Utility
+Prepares standalone 64-bit executable using PyInstaller.
 
-Requirements:
-- Windows 10/11 x64 build machine
-- Python 3.10+
-- pyinstaller >= 6.0
+Requirements for compiling native PE binaries (.exe):
+- 64-bit Windows host or GitHub Actions CI runner (windows-latest)
+- Python 3.10+ (64-bit)
+- PyInstaller >= 6.0
 """
 
 import sys
-import subprocess
 import os
+import argparse
+import subprocess
+import shutil
 
-def build_windows_binary():
-    print("=" * 60)
-    print("G-SENSE Desktop Build & Packaging Utility")
-    print("=" * 60)
+DESKTOP_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.abspath(os.path.join(DESKTOP_DIR, ".."))
 
-    # Check platform
-    if sys.platform != "win32":
-        print(f"[!] Warning: Current host platform is '{sys.platform}'.")
-        print("    Native Windows PE binaries (.exe) can only be linked and code-signed")
-        print("    on a Windows host or Windows CI runner (e.g. GitHub Actions windows-latest).")
-        print("    Generating packaging spec file for target environment...")
+def generate_spec_file(output_spec_path: str = None) -> str:
+    """Generates a complete PyInstaller specification file."""
+    if output_spec_path is None:
+        output_spec_path = os.path.join(DESKTOP_DIR, "GSense.spec")
 
-    spec_content = """# -*- mode: python ; coding: utf-8 -*-
+    app_py_path = os.path.join(DESKTOP_DIR, "app.py").replace("\\", "/")
+
+    spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
+# G-SENSE Standalone Windows Executable Specification
+
+import os
+import sys
 
 block_cipher = None
+desktop_path = r'{DESKTOP_DIR}'
 
 a = Analysis(
-    ['app.py'],
-    pathex=[],
+    ['{app_py_path}'],
+    pathex=[desktop_path],
     binaries=[],
     datas=[],
-    hiddenimports=['sqlite3', 'tkinter', 'gsense_engine', 'storage'],
+    hiddenimports=[
+        'sqlite3',
+        'tkinter',
+        'tkinter.ttk',
+        'tkinter.messagebox',
+        'tkinter.filedialog',
+        'gsense_engine',
+        'storage',
+        'window_tracker'
+    ],
     hookspath=[],
-    hooksconfig={},
+    hooksconfig={{}},
     runtime_hooks=[],
-    excludes=['matplotlib', 'numpy', 'scipy'],
+    excludes=['matplotlib', 'numpy', 'scipy', 'pandas', 'IPython', 'pytest'],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=False,
 )
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
@@ -62,20 +77,94 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
+    target_arch='x86_64',
     codesign_identity=None,
     entitlements_file=None,
     icon=None,
 )
 """
-    with open("GSense.spec", "w", encoding="utf-8") as f:
+    with open(output_spec_path, "w", encoding="utf-8") as f:
         f.write(spec_content)
-    print("[✓] Created PyInstaller specification: GSense.spec")
-    print("\nTo build the standalone installer on Windows:")
-    print("  1. pip install -r requirements.txt")
-    print("  2. pip install pyinstaller")
-    print("  3. pyinstaller GSense.spec --clean")
-    print("  Output will be available in dist/GSense-AdaptiveAssistant.exe")
+
+    # Also keep a copy at repo root for CI workflows executing from root
+    root_spec = os.path.join(REPO_ROOT, "GSense.spec")
+    if root_spec != output_spec_path:
+        with open(root_spec, "w", encoding="utf-8") as f:
+            f.write(spec_content)
+
+    return output_spec_path
+
+def verify_modules():
+    """Verifies all desktop modules import cleanly."""
+    print("[*] Verifying desktop Python modules...")
+    sys.path.insert(0, DESKTOP_DIR)
+    try:
+        import gsense_engine
+        import storage
+        import window_tracker
+        print("  ✓ gsense_engine.py: OK")
+        print("  ✓ storage.py: OK")
+        print("  ✓ window_tracker.py: OK")
+        return True
+    except Exception as e:
+        print(f"  ❌ Import error: {e}")
+        return False
+
+def build_windows_binary(trigger_build: bool = False):
+    print("=" * 65)
+    print("   G-SENSE Desktop Build & Packaging Utility (x64 Windows)")
+    print("=" * 65)
+
+    if not verify_modules():
+        sys.exit(1)
+
+    spec_path = generate_spec_file()
+    print(f"[✓] Created PyInstaller specification at: {spec_path}")
+
+    # Inspect current platform
+    is_windows = sys.platform == "win32"
+    if not is_windows:
+        print(f"\n[!] Notice: Host platform is '{sys.platform}' (Linux/Unix).")
+        print("    Native Windows PE binaries (.exe) require a 64-bit Windows environment")
+        print("    to link Win32 runtime libraries and create valid PE headers.")
+        print("    The GitHub Actions CI workflow (.github/workflows/windows_build.yml)")
+        print("    is configured to automatically compile and release 'GSense-AdaptiveAssistant.exe'.")
+        print("\n[✓] Specification generation and pre-flight module verification completed.")
+        return 0
+
+    if trigger_build:
+        print("\n[*] Host is Windows! Initiating PyInstaller build...")
+        pyinstaller_cmd = shutil.which("pyinstaller")
+        if not pyinstaller_cmd:
+            print("  ❌ PyInstaller not found in PATH. Install with: pip install pyinstaller")
+            return 1
+
+        cmd = [pyinstaller_cmd, spec_path, "--clean", "--noconfirm"]
+        print(f"    Running: {' '.join(cmd)}")
+        result = subprocess.run(cmd, cwd=REPO_ROOT)
+        if result.returncode == 0:
+            exe_path = os.path.join(REPO_ROOT, "dist", "GSense-AdaptiveAssistant.exe")
+            if os.path.exists(exe_path):
+                size_mb = os.path.getsize(exe_path) / (1024 * 1024)
+                print(f"\n[✓] Build Succeeded!")
+                print(f"    Output Binary: {exe_path} ({size_mb:.2f} MB)")
+                return 0
+        print("  ❌ PyInstaller build failed.")
+        return result.returncode
+
+    print("\nTo build manually on a Windows host:")
+    print("  1. pip install -r desktop/requirements.txt")
+    print("  2. python desktop/build_windows.py --build")
+    print("  Output will be placed in dist/GSense-AdaptiveAssistant.exe")
+    return 0
 
 if __name__ == "__main__":
-    build_windows_binary()
+    parser = argparse.ArgumentParser(description="G-SENSE Windows Build Utility")
+    parser.add_argument("--build", action="store_true", help="Run PyInstaller build if on Windows host")
+    parser.add_argument("--verify-only", action="store_true", help="Verify modules and exit")
+    args = parser.parse_args()
+
+    if args.verify_only:
+        sys.exit(0 if verify_modules() else 1)
+    else:
+        sys.exit(build_windows_binary(trigger_build=args.build))

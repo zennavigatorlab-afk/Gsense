@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G-SENSE — AdaptiveAssistant</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <!-- SVG Logo -->
+        <svg class="logo-icon" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="28" height="28" rx="6" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+          <path d="M22 11.5C20.5 8.5 16.5 8 13.5 9C10 10.2 8.5 14 9 17.5C9.5 21.2 13 23.5 17 23C20.5 22.5 22.5 19.8 22.5 17H16" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="16" cy="17" r="1.75" fill="#3b82f6"/>
+          <circle cx="22.5" cy="17" r="1.5" fill="#3b82f6"/>
+          <circle cx="22" cy="11.5" r="1.5" fill="#3b82f6"/>
+          <circle cx="13.5" cy="9" r="1.5" fill="#3b82f6"/>
+          <circle cx="9" cy="17.5" r="1.5" fill="#3b82f6"/>
+          <path d="M16 17V12" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="2 2" stroke-linecap="round"/>
+          <circle cx="16" cy="12" r="1.25" fill="#60a5fa"/>
+        </svg>
+        <div class="brand-text">
+          <span class="brand-title">G-SENSE</span>
+          <span class="brand-tagline">AdaptiveAssistant</span>
+        </div>
+      </div>
+      <div id="statusPill" class="status-pill status-active">
+        <span class="status-dot"></span>
+        <span id="statusText">Active</span>
+      </div>
+    </header>
+
+    <!-- Privacy Banner -->
+    <div class="privacy-guarantee-banner">
+      <div class="privacy-item">
+        <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Zero Keystrokes</span>
+      </div>
+      <div class="privacy-item">
+        <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>No Text / Passwords</span>
+      </div>
+      <div class="privacy-item">
+        <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Camera Off</span>
+      </div>
+    </div>
+
+    <!-- Active Tab Status Banner -->
+    <div class="current-site-card" id="currentSiteCard">
+      <div class="card-caption">Current Tab</div>
+      <div class="card-site-name" id="currentSiteName">Analyzing active tab...</div>
+      <div class="card-site-desc" id="currentSiteDesc">Checking privacy boundaries</div>
+    </div>
+
+    <!-- Pause / Resume Primary Button -->
+    <div class="action-section">
+      <button id="toggleLearningBtn" class="btn btn-primary">
+        <span id="toggleBtnIcon">⏸</span>
+        <span id="toggleBtnText">Pause Learning</span>
+      </button>
+    </div>
+
+    <!-- Observed Interaction Patterns Metrics -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-value" id="valDwell">0m 00s</div>
+        <div class="metric-label">Active Dwell Time</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" id="valPages">0</div>
+        <div class="metric-label">Pages Monitored</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" id="valClicks">0</div>
+        <div class="metric-label">Repeated Clicks</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" id="valBacktracks">0</div>
+        <div class="metric-label">Backtracks</div>
+      </div>
+    </div>
+
+    <!-- Formula Accordion -->
+    <details class="formula-details">
+      <summary>Measurement Formulas & Explanations</summary>
+      <div class="formula-content">
+        <div class="formula-row">
+          <strong>Active Dwell:</strong> Accumulated duration while page is visible & focused. Pauses immediately if tab is hidden or inactive for &gt;30s.
+        </div>
+        <div class="formula-row">
+          <strong>Repeated Clicks:</strong> 3+ rapid clicks on the same button or link within 2.5 seconds (indicates struggle or unresponsive element).
+        </div>
+        <div class="formula-row">
+          <strong>Backtracking:</strong> Return to previous page within 8 seconds of navigation (detects dead ends or navigation difficulty).
+        </div>
+      </div>
+    </details>
+
+    <!-- Data Management Section -->
+    <div class="data-section">
+      <div class="data-header">
+        <span class="data-title">Local Data Storage</span>
+        <span class="record-badge" id="recordCount">0 records</span>
+      </div>
+      <div class="button-row">
+        <button id="exportJsonBtn" class="btn btn-secondary" title="Export records as formatted JSON">Export JSON</button>
+        <button id="exportCsvBtn" class="btn btn-secondary" title="Export records as RFC 4180 CSV">Export CSV</button>
+      </div>
+      <button id="purgeBtn" class="btn btn-danger" title="Purge all records from local storage">Purge All Data</button>
+    </div>
+
+    <!-- Footer Notice -->
+    <footer class="footer">
+      <span>G-SENSE v1.0.0 • Local Chrome Storage Only</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

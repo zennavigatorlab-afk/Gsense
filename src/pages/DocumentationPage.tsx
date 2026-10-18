@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 export const DocumentationPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'quickstart' | 'supabase' | 'github' | 'vercel' | 'gsc'>('quickstart');
+  const [activeTab, setActiveTab] = useState<'quickstart' | 'supabase' | 'github' | 'vercel' | 'gsc' | 'windows'>('quickstart');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleCopy = (key: string, text: string) => {
@@ -139,6 +139,7 @@ CREATE POLICY "Users can manage own feedback"
           { id: 'github', label: '3. GitHub Upload Guide' },
           { id: 'vercel', label: '4. Vercel Deployment' },
           { id: 'gsc', label: '5. Google Search Console' },
+          { id: 'windows', label: '6. Windows Desktop & CI Build' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -354,6 +355,67 @@ CREATE POLICY "Users can manage own feedback"
 
             <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 text-xs text-slate-500 dark:text-slate-400">
               Honest status: Google Search Console requires domain ownership verification and active web crawling; pages cannot be marked as indexed until domain verification is completed by the domain administrator.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 6: Windows Desktop & CI Build */}
+      {activeTab === 'windows' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Windows Desktop Architecture & CI Packaging
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              The G-SENSE Desktop software provides native interaction pattern assistance for Windows. It features a local Tkinter UI, SQLite persistence, and an opt-in active-window tracker with UI Automation support.
+            </p>
+
+            <div className="rounded-lg bg-slate-50 p-4 border border-slate-200 dark:bg-slate-950 dark:border-slate-800 text-xs space-y-2">
+              <div className="font-semibold text-slate-900 dark:text-white">Privacy Invariants:</div>
+              <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
+                <li><strong>Zero Keystroke / Text Logging:</strong> Never hooks keyboard, reads input fields, passwords, or clipboard.</li>
+                <li><strong>Sensitive Window Auto-Exclusion:</strong> Financial portals, password managers, and private browsing are dropped.</li>
+                <li><strong>Permitted UI Automation Only:</strong> Only buttons, tabs, and menu items are inspected; edit controls are strictly blocked.</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-slate-900 dark:text-white">Automated GitHub Actions CI Workflow:</div>
+              <div className="relative rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 overflow-x-auto">
+                <code>
+                  # Workflow File: .github/workflows/windows_build.yml<br />
+                  # Runner: windows-latest (x86_64)<br />
+                  # Steps: checkout -&gt; setup python 3.11 -&gt; run test_desktop.py -&gt; build via PyInstaller<br />
+                  # Artifact: dist/GSense-AdaptiveAssistant.exe (with SHA-256 checksum)<br />
+                  # Trigger: git tag push (v*) or GitHub Actions manual dispatch
+                </code>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-slate-900 dark:text-white">Local Run & Verification Commands:</div>
+              <div className="relative rounded-lg bg-slate-900 p-4 font-mono text-xs text-slate-100 overflow-x-auto">
+                <button
+                  onClick={() =>
+                    handleCopy(
+                      'win_cmd',
+                      `cd desktop\npip install -r requirements.txt\npython test_desktop.py\npython app.py\npython build_windows.py --build`
+                    )
+                  }
+                  className="absolute top-3 right-3 rounded bg-slate-800 p-1.5 text-slate-300 hover:bg-slate-700"
+                  title="Copy commands"
+                >
+                  {copiedKey === 'win_cmd' ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                </button>
+                <code>
+                  cd desktop<br />
+                  pip install -r requirements.txt<br />
+                  python test_desktop.py          # Runs all 8 verification tests<br />
+                  python app.py                   # Launches Tkinter GUI<br />
+                  python build_windows.py --build # Builds 64-bit EXE on Windows host
+                </code>
+              </div>
             </div>
           </div>
         </div>

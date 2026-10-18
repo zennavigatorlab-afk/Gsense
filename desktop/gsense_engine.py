@@ -11,8 +11,9 @@ Strict Privacy Invariants:
 """
 
 import time
-import math
 import json
+import csv
+import io
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 
@@ -24,7 +25,7 @@ class InteractionEvent:
     session_id: str
     screen_id: str
     component_type: str
-    event_type: str # 'navigation', 'repeat_attempt', 'hesitation_pause', 'correction', 'action_success', 'idle_pause'
+    event_type: str # 'navigation', 'repeat_attempt', 'hesitation_pause', 'correction', 'action_success', 'idle_pause', 'window_switch', 'ui_automation_invoke'
     attempt_count: int = 1
     hesitation_ms: int = 0
     is_correction: bool = False
@@ -70,13 +71,17 @@ class GSenseEngine:
         screen_id: str,
         component_type: str,
         event_type: str,
-        is_correction: bool = False
+        is_correction: bool = False,
+        hesitation_override_ms: Optional[int] = None
     ) -> Optional[InteractionEvent]:
         if self.is_paused:
             return None
 
         now = time.time()
-        raw_elapsed_ms = int((now - self._last_interaction_time) * 1000)
+        if hesitation_override_ms is not None:
+            raw_elapsed_ms = hesitation_override_ms
+        else:
+            raw_elapsed_ms = int((now - self._last_interaction_time) * 1000)
         self._last_interaction_time = now
 
         is_idle = raw_elapsed_ms > MAX_ACTIVE_TASK_HESITATION_MS or event_type == 'idle_pause'
@@ -181,9 +186,46 @@ class GSenseEngine:
         )
 
     def export_data(self) -> str:
-        return json.dumps([asdict(e) for e in self.events], indent=2)
+        """Export JSON formatted bundle with privacy guarantees."""
+        summary = self.compute_summary()
+        bundle = {
+            "app": "G-SENSE Desktop",
+            "version": "1.0.0",
+            "privacy_guarantees": {
+                "zero_keystroke_logging": True,
+                "zero_password_logging": True,
+                "zero_clipboard_access": True,
+                "zero_screen_capture": True,
+                "local_storage_only": True
+            },
+            "summary": asdict(summary),
+            "events": [asdict(e) for e in self.events]
+        }
+        return json.dumps(bundle, indent=2)
+
+    def export_csv(self) -> str:
+        """Export RFC 4180 CSV of recorded interaction events."""
+        output = io.StringIO()
+        fieldnames = [
+            'event_id',
+            'session_id',
+            'screen_id',
+            'component_type',
+            'event_type',
+            'attempt_count',
+            'hesitation_ms',
+            'is_correction',
+            'is_idle',
+            'timestamp'
+        ]
+        writer = csv.DictWriter(output, fieldnames=fieldnames, lineterminator='\r\n')
+        writer.writeheader()
+        for e in self.events:
+            writer.writerow(asdict(e))
+        return output.getvalue()
 
     def clear_data(self):
+        """Purges all in-memory events and counters."""
         self.events.clear()
         self._current_attempt_map.clear()
         self._last_interaction_time = time.time()
@@ -192,8 +234,9 @@ if __name__ == "__main__":
     engine = GSenseEngine()
     print("G-SENSE Python Learning Engine Initialized.")
     print("Test run: Recording sample interaction sequence...")
-    engine.record_event("evt_1", "sess_01", "settings", "toggle", "navigation")
-    time.sleep(0.05)
-    engine.record_event("evt_2", "sess_01", "settings", "input", "repeat_attempt", is_correction=True)
+    engine.record_event("evt_1", "sess_demo", "main_screen", "button_submit", "repeat_attempt")
+    engine.record_event("evt_2", "sess_demo", "main_screen", "button_submit", "correction", is_correction=True)
     summary = engine.compute_summary()
-    print(f"Summary: {summary}")
+    print("Summary:", summary)
+    csv_sample = engine.export_csv()
+    print(f"CSV Header Preview: {csv_sample.splitlines()[0]}")
