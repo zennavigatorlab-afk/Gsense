@@ -10,7 +10,8 @@ export type EventType =
   | 'hesitation_pause'
   | 'correction'
   | 'action_success'
-  | 'assistance_trigger';
+  | 'assistance_trigger'
+  | 'idle_pause';
 
 export interface UserProfile {
   id: string;
@@ -42,19 +43,35 @@ export interface InteractionEvent {
   attemptCount: number;
   hesitationMs: number;
   isCorrection: boolean;
+  isIdle: boolean; // true if elapsed time exceeded active threshold or tab was inactive
   timestamp: number;
 }
 
 export interface LearningSummary {
   totalEvents: number;
-  avgHesitationMs: number;
-  correctionRate: number;
-  repeatAttemptRate: number;
-  confidenceScore: number; // 0.0 to 1.0 (statistical basis)
-  confidenceLabel: string;
+  activeTaskEvents: number;
+  avgHesitationMs: number; // Excludes idle time (>30s or inactive tab)
+  totalIdleIntervals: number;
+  correctionRate: number; // (corrections / totalEvents)
+  repeatAttemptRate: number; // (retries / totalEvents)
+  sampleSize: number; // raw N
+  sampleTarget: number; // target N = 50 for mature baseline
+  sampleSufficiencyRatio: number; // N / 50 capped at 1.0
+  sampleStatusLabel: string; // 'Sparse (Under 15 events)', 'Preliminary (15-49 events)', 'Mature Sample (50+ events)'
   recommendedAssistanceLevel: AssistanceLevel;
   explanation: string;
   computedAt: string;
+}
+
+export interface OfferedTipRecord {
+  id: string;
+  promptId: string;
+  title: string;
+  triggerReason: string;
+  screenId: string;
+  offeredAt: string;
+  status: 'displayed' | 'accepted' | 'dismissed' | 'unhelpful';
+  wasHelpful?: boolean;
 }
 
 export interface AssistanceFeedback {

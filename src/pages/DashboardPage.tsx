@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { learningEngine } from '../lib/learningEngine';
-import { getLocalFeedback, getLocalInteractionEvents } from '../lib/supabaseClient';
-import { InteractionEvent, LearningSummary, AssistanceFeedback } from '../types';
+import { getLocalInteractionEvents } from '../lib/supabaseClient';
+import { InteractionEvent, LearningSummary } from '../types';
 import {
   Activity,
   AlertCircle,
@@ -14,7 +14,14 @@ import {
   Info,
   Play,
   Pause,
-  Database
+  Database,
+  HelpCircle,
+  ThumbsUp,
+  ThumbsDown,
+  Layers,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -25,41 +32,53 @@ interface DashboardPageProps {
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId }) => {
   const [summary, setSummary] = useState<LearningSummary>(learningEngine.computeSummary());
   const [events, setEvents] = useState<InteractionEvent[]>(getLocalInteractionEvents());
-  const [feedbackList, setFeedbackList] = useState<AssistanceFeedback[]>(getLocalFeedback());
+  const [assistanceStats, setAssistanceStats] = useState(learningEngine.getAssistanceStats());
   const [isPaused, setIsPaused] = useState<boolean>(learningEngine.getIsPaused());
-  const [showFormulaModal, setShowFormulaModal] = useState<string | null>(null);
+  const [showFormulas, setShowFormulas] = useState<boolean>(true);
+  const [activeFormulaDetail, setActiveFormulaDetail] = useState<string | null>(null);
 
   const refreshData = () => {
     setSummary(learningEngine.computeSummary());
     setEvents(getLocalInteractionEvents());
-    setFeedbackList(getLocalFeedback());
+    setAssistanceStats(learningEngine.getAssistanceStats());
     setIsPaused(learningEngine.getIsPaused());
   };
 
   useEffect(() => {
     refreshData();
+    const unsubscribe = learningEngine.subscribe(() => {
+      refreshData();
+    });
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const handleTogglePause = () => {
     const next = !isPaused;
     learningEngine.setPaused(next);
     setIsPaused(next);
+    refreshData();
   };
 
   const handlePurge = () => {
-    if (window.confirm('Are you sure you want to permanently delete all recorded interaction data?')) {
+    if (
+      window.confirm(
+        'Permanently delete all recorded interaction events, guidance tips offered, and feedback records?'
+      )
+    ) {
       learningEngine.clearAllData();
       refreshData();
     }
   };
 
   const handleExportJson = () => {
-    const data = learningEngine.exportEventsAsJson();
+    const data = learningEngine.exportDataBundle();
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `gsense-interactions-${Date.now()}.json`;
+    a.download = `gsense-analysis-bundle-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -75,45 +94,53 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
     URL.revokeObjectURL(url);
   };
 
-  const handleSimulateQuickEvent = (type: 'nav' | 'repeat' | 'hesitation' | 'correction') => {
+  const handleSimulateQuickEvent = (
+    type: 'nav' | 'repeat' | 'hesitation' | 'correction' | 'idle'
+  ) => {
+    if (isPaused) {
+      alert('Learning engine is currently paused. Resume learning to record events.');
+      return;
+    }
+
     if (type === 'nav') {
       learningEngine.recordEvent({
-        sessionId: 'manual_dashboard_session',
+        sessionId: 'dashboard_sim_session',
         screenId: 'dashboard',
-        componentType: 'quick_nav_test',
+        componentType: 'navigation_link',
         eventType: 'navigation',
       });
     } else if (type === 'repeat') {
       learningEngine.recordEvent({
-        sessionId: 'manual_dashboard_session',
+        sessionId: 'dashboard_sim_session',
         screenId: 'dashboard',
-        componentType: 'button_retry',
+        componentType: 'action_button',
         eventType: 'repeat_attempt',
       });
     } else if (type === 'hesitation') {
       learningEngine.recordEvent({
-        sessionId: 'manual_dashboard_session',
+        sessionId: 'dashboard_sim_session',
         screenId: 'dashboard',
-        componentType: 'timer_dwell',
+        componentType: 'form_selector',
         eventType: 'hesitation_pause',
       });
     } else if (type === 'correction') {
       learningEngine.recordEvent({
-        sessionId: 'manual_dashboard_session',
+        sessionId: 'dashboard_sim_session',
         screenId: 'dashboard',
         componentType: 'input_field',
         eventType: 'correction',
         isCorrection: true,
       });
+    } else if (type === 'idle') {
+      learningEngine.recordEvent({
+        sessionId: 'dashboard_sim_session',
+        screenId: 'dashboard',
+        componentType: 'background_window',
+        eventType: 'idle_pause',
+      });
     }
     refreshData();
   };
-
-  const helpfulCount = feedbackList.filter((f) => f.wasHelpful).length;
-  const unhelpfulCount = feedbackList.filter((f) => !f.wasHelpful).length;
-  const totalFeedback = feedbackList.length;
-  const acceptanceRate =
-    totalFeedback > 0 ? Math.round((helpfulCount / totalFeedback) * 100) : 0;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
@@ -138,7 +165,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
             onClick={handleTogglePause}
             className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors cursor-pointer border ${
               isPaused
-                ? 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
+                ? 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 font-semibold'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800 dark:hover:bg-slate-800'
             }`}
           >
@@ -148,17 +175,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
 
           <button
             onClick={handleExportJson}
-            disabled={events.length === 0}
+            disabled={events.length === 0 && assistanceStats.totalOffered === 0}
             className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer"
+            title="Export complete session analysis bundle as JSON"
           >
             <Download className="h-3.5 w-3.5" />
-            <span>Export JSON</span>
+            <span>Export JSON Bundle</span>
           </button>
 
           <button
             onClick={handleExportCsv}
             disabled={events.length === 0}
             className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer"
+            title="Export interaction events table as CSV"
           >
             <Download className="h-3.5 w-3.5" />
             <span>Export CSV</span>
@@ -166,8 +195,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
 
           <button
             onClick={handlePurge}
-            disabled={events.length === 0}
+            disabled={events.length === 0 && assistanceStats.totalOffered === 0}
             className="flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/60 disabled:opacity-40 transition-colors cursor-pointer"
+            title="Permanently wipe all recorded events and tips"
           >
             <Trash2 className="h-3.5 w-3.5" />
             <span>Purge Data</span>
@@ -175,9 +205,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
         </div>
       </div>
 
+      {/* Engine Status Banner */}
+      {isPaused && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3.5 dark:border-amber-900/60 dark:bg-amber-950/40 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Pause className="h-4 w-4 text-amber-600" />
+            <span className="font-semibold">Learning Engine Paused:</span>
+            <span>All event recording and guidance triggers are suspended. No interactions are being collected.</span>
+          </div>
+          <button
+            onClick={handleTogglePause}
+            className="text-amber-800 dark:text-amber-300 font-semibold underline hover:text-amber-900 cursor-pointer"
+          >
+            Resume Learning
+          </button>
+        </div>
+      )}
+
       {/* KPI Stats Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Events */}
+        {/* Total Observed Events */}
         <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
             <span>Observed Events</span>
@@ -187,18 +234,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
             {summary.totalEvents}
           </div>
           <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-            Real in-app interactions recorded
+            {summary.activeTaskEvents} active · {summary.totalIdleIntervals} idle pauses
           </div>
         </div>
 
-        {/* Avg Hesitation Dwell */}
+        {/* Avg Task Hesitation Dwell (Excludes Idle) */}
         <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <span>Avg Hesitation Dwell</span>
+            <span>Task Hesitation Dwell</span>
             <button
-              onClick={() => setShowFormulaModal('hesitation')}
-              className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
-              title="View calculation formula"
+              onClick={() => setActiveFormulaDetail('hesitation')}
+              className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+              title="View formula"
             >
               <Info className="h-4 w-4" />
             </button>
@@ -206,8 +253,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
           <div className="text-2xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
             {summary.avgHesitationMs} <span className="text-sm font-sans font-normal text-slate-400">ms</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-            Pause between consecutive actions
+          <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+            Active pause before action (&le;30s)
           </div>
         </div>
 
@@ -216,9 +263,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
             <span>Correction Rate</span>
             <button
-              onClick={() => setShowFormulaModal('correction')}
-              className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
-              title="View calculation formula"
+              onClick={() => setActiveFormulaDetail('correction')}
+              className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+              title="View formula"
             >
               <Info className="h-4 w-4" />
             </button>
@@ -231,55 +278,169 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
           </div>
         </div>
 
-        {/* Statistical Confidence */}
+        {/* Sample Size & Data Maturity (Explicit Sample Indicator, not arbitrary percentage) */}
         <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
-            <span>Statistical Confidence</span>
+            <span>Sample Maturity</span>
             <button
-              onClick={() => setShowFormulaModal('confidence')}
-              className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
-              title="View calculation formula"
+              onClick={() => setActiveFormulaDetail('sample_size')}
+              className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+              title="View formula"
             >
               <Info className="h-4 w-4" />
             </button>
           </div>
           <div className="text-2xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-            {(summary.confidenceScore * 100).toFixed(0)} <span className="text-sm font-sans font-normal text-slate-400">%</span>
+            {summary.sampleSize} <span className="text-sm font-sans font-normal text-slate-400">/ 50</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 truncate">
-            {summary.confidenceLabel}
+          <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 truncate" title={summary.sampleStatusLabel}>
+            {summary.sampleSize >= 50
+              ? 'Mature empirical sample (50+)'
+              : summary.sampleSize >= 15
+              ? 'Preliminary sample (15-49)'
+              : 'Sparse (under 15 events)'}
           </div>
         </div>
       </div>
 
-      {/* Formula Explanation Callout if opened */}
-      {showFormulaModal && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/60 dark:bg-blue-950/40 text-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-blue-900 dark:text-blue-200">
-              {showFormulaModal === 'hesitation' && 'Calculation: Hesitation Dwell (ms)'}
-              {showFormulaModal === 'correction' && 'Calculation: Correction Rate'}
-              {showFormulaModal === 'confidence' && 'Calculation: Statistical Confidence Score'}
-            </span>
-            <button
-              onClick={() => setShowFormulaModal(null)}
-              className="text-blue-700 dark:text-blue-300 hover:underline font-medium"
-            >
-              Close
-            </button>
+      {/* Assistance Guidance Tips & User Feedback Section */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Assistance Guidance Tips & Acceptance Feedback
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Every guidance tip actually displayed is logged below with real user Yes/No feedback responses.
+              </p>
+            </div>
           </div>
-          <p className="text-slate-700 dark:text-slate-300">
-            {showFormulaModal === 'hesitation' &&
-              'Calculated as the arithmetic mean: Σ(time_since_last_action) / N. Reflects natural reading and decision dwell time.'}
-            {showFormulaModal === 'correction' &&
-              'Calculated as: (Total corrections & backtracks) / N. High values indicate confusing instructions or UI friction.'}
-            {showFormulaModal === 'confidence' &&
-              'Calculated as: min(1.0, N / 50). Empirically requires at least 50 real events before model predictions stabilize into high confidence.'}
-          </p>
         </div>
-      )}
 
-      {/* Recommended Assistance Engine Evaluation */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-1">
+          {/* Total Tips Actually Displayed */}
+          <div className="rounded-lg bg-slate-50 p-3.5 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+            <span className="text-slate-500 dark:text-slate-400 block mb-1">
+              Total Tips Offered
+            </span>
+            <span className="text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
+              {assistanceStats.totalOffered}
+            </span>
+            <span className="text-[10px] text-slate-400 block mt-1">Every displayed prompt</span>
+          </div>
+
+          {/* Feedback Responses Submitted */}
+          <div className="rounded-lg bg-slate-50 p-3.5 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+            <span className="text-slate-500 dark:text-slate-400 block mb-1">
+              Feedback Submitted
+            </span>
+            <span className="text-xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
+              {assistanceStats.feedbackSubmittedCount}
+            </span>
+            <span className="text-[10px] text-slate-400 block mt-1">
+              {assistanceStats.helpfulCount} Yes · {assistanceStats.unhelpfulCount} No
+            </span>
+          </div>
+
+          {/* Acceptance Rate (Submitted Feedback) */}
+          <div className="rounded-lg bg-slate-50 p-3.5 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+            <span className="text-slate-500 dark:text-slate-400 block mb-1">
+              Helpful Feedback Rate
+            </span>
+            <span className="text-xl font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
+              {assistanceStats.acceptanceRateSubmitted}%
+            </span>
+            <span className="text-[10px] text-slate-400 block mt-1">Helpful / Submitted Feedback</span>
+          </div>
+
+          {/* Acceptance Rate (Total Offered) */}
+          <div className="rounded-lg bg-slate-50 p-3.5 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+            <span className="text-slate-500 dark:text-slate-400 block mb-1">
+              Overall Tip Acceptance
+            </span>
+            <span className="text-xl font-bold font-mono tabular-nums text-blue-600 dark:text-blue-400">
+              {assistanceStats.acceptanceRateOffered}%
+            </span>
+            <span className="text-[10px] text-slate-400 block mt-1">Helpful / Total Offered</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Exact Formulas & Methodology Section */}
+      <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+        <button
+          onClick={() => setShowFormulas(!showFormulas)}
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-800"
+        >
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-bold text-slate-900 dark:text-white">
+              Exact Formulas & Metric Definitions
+            </span>
+          </div>
+          {showFormulas ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+        </button>
+
+        {showFormulas && (
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/40">
+            {/* Formula 1: Task Hesitation */}
+            <div className="space-y-1.5 p-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+              <div className="font-bold text-slate-900 dark:text-white">
+                1. Average Task Hesitation Dwell
+              </div>
+              <div className="font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-blue-600 dark:text-blue-400">
+                Avg Hesitation = (1 / N_active) * &Sigma; (Dwell_i)
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
+                <strong>Active task dwell only:</strong> Computes the arithmetic mean over interactions where dwell duration &le; 30,000ms and the browser window was active. Pauses &gt; 30s or when the browser tab is hidden/blurred are classified as intentional idle time and excluded from the task hesitation mean.
+              </p>
+            </div>
+
+            {/* Formula 2: Correction Rate */}
+            <div className="space-y-1.5 p-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+              <div className="font-bold text-slate-900 dark:text-white">
+                2. Correction Rate
+              </div>
+              <div className="font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-blue-600 dark:text-blue-400">
+                Correction Rate = N_corrections / N_total
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
+                The exact ratio of backtracking events (input deletions, cancellation navigation, clear actions) to the total observed events count N. High rates indicate ambiguity in form field layout or unclear step directions.
+              </p>
+            </div>
+
+            {/* Formula 3: Retry / Repeat Attempt Rate */}
+            <div className="space-y-1.5 p-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+              <div className="font-bold text-slate-900 dark:text-white">
+                3. Retry Rate (Repeat Attempt Rate)
+              </div>
+              <div className="font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-blue-600 dark:text-blue-400">
+                Retry Rate = N_retries(attempt &ge; 3) / N_total
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
+                The percentage of actions where the user clicked or submitted the same target component 3 or more consecutive times before receiving a successful outcome state.
+              </p>
+            </div>
+
+            {/* Formula 4: Sample Maturity */}
+            <div className="space-y-1.5 p-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+              <div className="font-bold text-slate-900 dark:text-white">
+                4. Sample Size & Data Maturity Indicator
+              </div>
+              <div className="font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-blue-600 dark:text-blue-400">
+                Sample Maturity = min(1.0, N_total / 50)
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
+                <strong>Sample Sufficiency, not a fabricated percentage:</strong> Measures observed sample count N against the empirical threshold of 50 actions. Under 15 events is categorized as <em>Sparse</em>, 15 to 49 is <em>Preliminary</em>, and 50+ is <em>Mature Sample</em>.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Current Recommended Adaptation */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
@@ -301,31 +462,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-4 leading-relaxed">
           {summary.explanation}
         </p>
-
-        {/* User Assistance Feedback Metrics */}
-        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div>
-            <span className="text-slate-500 dark:text-slate-400 block">Total Assistance Tips Offered</span>
-            <span className="text-base font-bold font-mono text-slate-900 dark:text-white">
-              {totalFeedback}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 dark:text-slate-400 block">Helpful Confirmations</span>
-            <span className="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400">
-              {helpfulCount}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 dark:text-slate-400 block">User Acceptance Rate</span>
-            <span className="text-base font-bold font-mono text-blue-600 dark:text-blue-400">
-              {acceptanceRate}%
-            </span>
-          </div>
-        </div>
       </div>
 
-      {/* Raw Event Log or Empty State */}
+      {/* Raw Event Log */}
       <div className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
         <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -333,7 +472,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
               Observed Event Log
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Showing the latest interaction events stored in local browser memory.
+              Latest interaction events stored in local browser memory.
             </p>
           </div>
 
@@ -342,21 +481,27 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
             <span className="text-[11px] text-slate-400 mr-1">Simulate event:</span>
             <button
               onClick={() => handleSimulateQuickEvent('nav')}
-              className="rounded bg-slate-100 hover:bg-slate-200 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+              className="rounded bg-slate-100 hover:bg-slate-200 px-2.5 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
             >
-              + Navigation
+              + Nav Action
             </button>
             <button
               onClick={() => handleSimulateQuickEvent('repeat')}
-              className="rounded bg-slate-100 hover:bg-slate-200 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+              className="rounded bg-slate-100 hover:bg-slate-200 px-2.5 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
             >
               + Retry
             </button>
             <button
               onClick={() => handleSimulateQuickEvent('correction')}
-              className="rounded bg-slate-100 hover:bg-slate-200 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+              className="rounded bg-slate-100 hover:bg-slate-200 px-2.5 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
             >
               + Correction
+            </button>
+            <button
+              onClick={() => handleSimulateQuickEvent('idle')}
+              className="rounded bg-slate-100 hover:bg-slate-200 px-2.5 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+            >
+              + Idle Pause
             </button>
           </div>
         </div>
@@ -387,7 +532,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
                   <th className="py-2.5 px-4">Event Type</th>
                   <th className="py-2.5 px-4 text-right">Attempt #</th>
                   <th className="py-2.5 px-4 text-right">Dwell Time</th>
-                  <th className="py-2.5 px-4 text-center">Correction</th>
+                  <th className="py-2.5 px-4 text-center">Type Class</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
@@ -409,10 +554,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, userId
                       {evt.hesitationMs} ms
                     </td>
                     <td className="py-2.5 px-4 text-center">
-                      {evt.isCorrection ? (
-                        <span className="text-amber-600 dark:text-amber-400 font-medium">Yes</span>
+                      {evt.isIdle ? (
+                        <span className="text-amber-600 dark:text-amber-400 font-medium">Idle Pause</span>
+                      ) : evt.isCorrection ? (
+                        <span className="text-rose-600 dark:text-rose-400 font-medium">Correction</span>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-emerald-600 dark:text-emerald-400">Task Dwell</span>
                       )}
                     </td>
                   </tr>

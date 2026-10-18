@@ -172,15 +172,29 @@ git push -u origin main
 
 ---
 
-## 8. Test Execution & Results
+## 8. Test Execution & Audit Results
 
-Automated test suite (`test/engine.test.ts`):
+Dual automated test suites (`npm test` executes `test/engine.test.ts` and `test/e2e_audit.test.ts`):
+
+### Unit Verification Suite (`test/engine.test.ts`)
 - **Test 1**: Empty state computation without division-by-zero errors -> **PASSED**
 - **Test 2**: Privacy invariants (zero text or password logging) -> **PASSED**
-- **Test 3**: Repeat attempt detection & threshold triggering -> **PASSED**
-- **Test 4**: Statistical confidence score bounded in [0, 1] range -> **PASSED**
-- **Test 5**: User pause compliance (zero telemetry while paused) -> **PASSED**
-- **Test 6**: Data export as valid JSON and complete memory purge -> **PASSED**
+- **Test 3**: Guidance tip counting on display -> **PASSED**
+- **Test 4**: User feedback & acceptance rate calculation -> **PASSED**
+- **Test 5**: Active task dwell vs intentional idle separation -> **PASSED**
+- **Test 6**: Sample size maturity indicator tiers -> **PASSED**
+- **Test 7**: User pause compliance (zero telemetry while paused) -> **PASSED**
+- **Test 8**: Data bundle export and complete memory purge -> **PASSED**
+
+### End-to-End Audit Suite (`test/e2e_audit.test.ts`)
+- **Audit 1**: Initial pristine zero-state -> **PASSED**
+- **Audit 2**: Real-time pub/sub subscriber updates -> **PASSED**
+- **Audit 3**: Tip display count tracking (`totalOffered`) -> **PASSED**
+- **Audit 4**: Yes/No feedback & dual acceptance rate math -> **PASSED**
+- **Audit 5**: Active dwell (&le;30s) vs idle pauses (&gt;30s) -> **PASSED**
+- **Audit 6**: Sample maturity classification (Sparse, Preliminary, Mature) -> **PASSED**
+- **Audit 7**: Strict pause learning enforcement -> **PASSED**
+- **Audit 8**: Complete data bundle export and full user data purge -> **PASSED**
 
 ---
 
@@ -190,10 +204,11 @@ Automated test suite (`test/engine.test.ts`):
 - [x] Original G-SENSE SVG logo with brain/circuit styling and blue accents.
 - [x] Responsive official website with Home, Features, How It Works, Downloads, Docs, Privacy, Contact, Sign In, and Profile pages.
 - [x] Strict Top Bar Contract navigation with Light/Dark mode switcher.
+- [x] Real-time pub/sub synchronization between learning engine, guidance overlay, and dashboard.
 - [x] Live interactive sandbox on the homepage for testing repeated attempts, pauses, and corrections.
 - [x] Client-side TypeScript learning engine and modular Python desktop learning engine.
-- [x] Functional Human Interaction Analysis Dashboard computing real dwell times, repeat rates, correction ratios, and statistical confidence.
-- [x] Non-intrusive adaptive assistant guidance overlay with user feedback loop (`Was this helpful? Yes / No`).
+- [x] Functional Human Interaction Analysis Dashboard with exact mathematical formulas and sample maturity indicators.
+- [x] Non-intrusive adaptive guidance overlay with persistent Yes/No feedback recording and accurate acceptance rates.
 - [x] Supabase authentication with Google sign-in, email auth, and resilient local fallback mode.
 - [x] Privacy-first optional camera sensing module with local HTML5 canvas differencing and immediate disable.
 - [x] Full data sovereignty: Pause learning, export JSON/CSV, purge records, and delete account.

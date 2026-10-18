@@ -68,13 +68,13 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
             {/* Hesitation Formula */}
             <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/40">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-2">
-                Avg Hesitation Dwell (D)
+                Active Task Hesitation Dwell (D_task)
               </h3>
               <div className="font-mono text-xs bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 mb-2">
-                D = (1 / N) * Σ (t_action - t_prev)
+                D_task = (1 / N_active) * Σ (t_action - t_prev) [where dwell ≤ 30s]
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Measures the mean elapsed dwell duration across N interactions. Prolonged dwell signals reading, searching for controls, or confusion.
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Measures the mean elapsed dwell duration across active interactions. Prolonged pauses (&gt;30s) or backgrounded browser tabs are classified as intentional idle time and excluded from task dwell.
               </p>
             </div>
 
@@ -86,34 +86,34 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
               <div className="font-mono text-xs bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 mb-2">
                 C_r = N_corrections / N_total
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                The proportion of events that represent input deletions, backtrack navigation, or error clears relative to total actions.
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                The proportion of events that represent input deletions, backtrack navigation, or error clears relative to total observed actions.
               </p>
             </div>
 
             {/* Repeat Attempt Rate */}
             <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/40">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-2">
-                Repeat Attempt Rate (R_r)
+                Retry Rate (R_r)
               </h3>
               <div className="font-mono text-xs bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 mb-2">
-                R_r = N_retries(≥ 3) / N_total
+                R_r = N_retries(attempt ≥ 3) / N_total
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                The frequency of rapid repeated attempts on the same control element before receiving visible feedback.
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                The frequency of rapid repeated attempts (3 or more consecutive tries) on the same control element before receiving completion feedback.
               </p>
             </div>
 
-            {/* Statistical Confidence Score */}
+            {/* Sample Size & Data Maturity Indicator */}
             <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/40">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-2">
-                Statistical Confidence (S_c)
+                Sample Maturity Indicator (S_m)
               </h3>
               <div className="font-mono text-xs bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 mb-2">
-                S_c = min(1.0, N_total / 50)
+                S_m = min(1.0, N_total / 50)
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Bounded confidence metric: Requires at least 50 observed events before the engine classifies interaction models with high certainty.
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Empirical sample indicator: Tracks progression toward the target sample size of 50 events. Under 15 events is categorized as Sparse, 15 to 49 is Preliminary, and 50+ is a Mature Sample.
               </p>
             </div>
           </div>

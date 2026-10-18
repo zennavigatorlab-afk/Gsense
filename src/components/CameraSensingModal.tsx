@@ -126,6 +126,11 @@ export const CameraSensingModal: React.FC<CameraSensingModalProps> = ({
     onToggleEnabled(false);
   };
 
+  const handleClose = () => {
+    stopCameraStream();
+    onClose();
+  };
+
   useEffect(() => {
     if (isOpen && isEnabled && !streamActive) {
       startCameraStream();
@@ -156,8 +161,8 @@ export const CameraSensingModal: React.FC<CameraSensingModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="rounded p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            onClick={handleClose}
+            className="rounded p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="h-5 w-5" />
@@ -246,7 +251,7 @@ export const CameraSensingModal: React.FC<CameraSensingModalProps> = ({
         {/* Footer info */}
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
           <span>Client-side HTML5 Canvas API</span>
-          <button onClick={onClose} className="hover:underline text-slate-600 dark:text-slate-300 cursor-pointer">
+          <button onClick={handleClose} className="hover:underline text-slate-600 dark:text-slate-300 cursor-pointer">
             Dismiss
           </button>
         </div>

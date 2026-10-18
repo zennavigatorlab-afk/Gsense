@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AdaptiveSuggestion } from '../types';
-import { saveLocalFeedback } from '../lib/supabaseClient';
+import { learningEngine } from '../lib/learningEngine';
 import { HelpCircle, Check, X, ThumbsUp, ThumbsDown, ChevronRight } from 'lucide-react';
 
 interface AdaptiveAssistantOverlayProps {
@@ -8,6 +8,7 @@ interface AdaptiveAssistantOverlayProps {
   onDismiss: () => void;
   onAction?: () => void;
   userId?: string;
+  onFeedbackSubmitted?: () => void;
 }
 
 export const AdaptiveAssistantOverlay: React.FC<AdaptiveAssistantOverlayProps> = ({
@@ -15,6 +16,7 @@ export const AdaptiveAssistantOverlay: React.FC<AdaptiveAssistantOverlayProps> =
   onDismiss,
   onAction,
   userId,
+  onFeedbackSubmitted,
 }) => {
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackHelpful, setFeedbackHelpful] = useState<boolean | null>(null);
@@ -25,21 +27,31 @@ export const AdaptiveAssistantOverlay: React.FC<AdaptiveAssistantOverlayProps> =
     setFeedbackHelpful(helpful);
     setFeedbackSent(true);
 
-    saveLocalFeedback({
-      id: 'fb_' + Math.random().toString(36).substring(2, 9),
-      userId,
-      promptId: suggestion.id,
-      screenId: 'active_session',
-      triggerReason: suggestion.triggerReason,
-      wasHelpful: helpful,
-      createdAt: new Date().toISOString(),
-    });
+    learningEngine.recordFeedback(
+      suggestion.id,
+      helpful,
+      'active_session',
+      suggestion.triggerReason,
+      userId
+    );
+
+    if (onFeedbackSubmitted) {
+      onFeedbackSubmitted();
+    }
 
     setTimeout(() => {
       onDismiss();
       setFeedbackSent(false);
       setFeedbackHelpful(null);
-    }, 1800);
+    }, 1500);
+  };
+
+  const handleDismiss = () => {
+    learningEngine.recordTipDismissed(suggestion.id);
+    if (onFeedbackSubmitted) {
+      onFeedbackSubmitted();
+    }
+    onDismiss();
   };
 
   return (
@@ -64,7 +76,7 @@ export const AdaptiveAssistantOverlay: React.FC<AdaptiveAssistantOverlayProps> =
           </div>
         </div>
         <button
-          onClick={onDismiss}
+          onClick={handleDismiss}
           className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
           aria-label="Dismiss assistant hint"
         >
@@ -112,7 +124,7 @@ export const AdaptiveAssistantOverlay: React.FC<AdaptiveAssistantOverlayProps> =
         {feedbackSent ? (
           <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
             <Check className="h-3.5 w-3.5" />
-            <span>Thank you! Feedback recorded.</span>
+            <span>Thank you! Feedback recorded ({feedbackHelpful ? 'Yes, Helpful' : 'No, Not Helpful'}).</span>
           </div>
         ) : (
           <>
@@ -122,19 +134,19 @@ export const AdaptiveAssistantOverlay: React.FC<AdaptiveAssistantOverlayProps> =
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => handleFeedback(true)}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                className="flex items-center gap-1 rounded-md px-2.5 py-1 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
                 aria-label="Mark helpful"
               >
-                <ThumbsUp className="h-3.5 w-3.5" />
-                <span className="text-[11px]">Yes</span>
+                <ThumbsUp className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-[11px] font-medium">Yes</span>
               </button>
               <button
                 onClick={() => handleFeedback(false)}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-slate-600 hover:bg-rose-50 hover:text-rose-700 dark:text-slate-400 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                className="flex items-center gap-1 rounded-md px-2.5 py-1 text-slate-700 hover:bg-rose-50 hover:text-rose-700 dark:text-slate-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
                 aria-label="Mark unhelpful"
               >
-                <ThumbsDown className="h-3.5 w-3.5" />
-                <span className="text-[11px]">No</span>
+                <ThumbsDown className="h-3.5 w-3.5 text-rose-600" />
+                <span className="text-[11px] font-medium">No</span>
               </button>
             </div>
           </>

@@ -7,6 +7,7 @@ Strict Privacy Invariants:
 - Never records raw keystrokes, typed passwords, or message contents.
 - Tracks only interaction dynamics: duration, attempt counts, hesitation dwell, navigation backtracks.
 - Transparent metrics; no fake emotional or psychic inference.
+- Distinguishes active task dwell from intentional idle intervals (>30s).
 """
 
 import time
@@ -15,26 +16,32 @@ import json
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 
+MAX_ACTIVE_TASK_HESITATION_MS = 30000
+
 @dataclass
 class InteractionEvent:
     event_id: str
     session_id: str
     screen_id: str
     component_type: str
-    event_type: str # 'navigation', 'repeat_attempt', 'hesitation_pause', 'correction', 'action_success'
+    event_type: str # 'navigation', 'repeat_attempt', 'hesitation_pause', 'correction', 'action_success', 'idle_pause'
     attempt_count: int = 1
     hesitation_ms: int = 0
     is_correction: bool = False
+    is_idle: bool = False
     timestamp: float = 0.0
 
 @dataclass
 class LearningSummary:
     total_events: int
+    active_task_events: int
     avg_hesitation_ms: float
+    total_idle_intervals: int
     correction_rate: float
     repeat_attempt_rate: float
-    confidence_score: float # 0.0 to 1.0 based on statistical sample size
-    confidence_label: str   # 'Low (gathering data)', 'Moderate', 'High'
+    sample_size: int
+    sample_target: int
+    sample_status_label: str
     recommended_assistance: str # 'step_by_step', 'hints_only', 'minimal'
     explanation: str
 
@@ -69,8 +76,11 @@ class GSenseEngine:
             return None
 
         now = time.time()
-        elapsed_ms = int((now - self._last_interaction_time) * 1000)
+        raw_elapsed_ms = int((now - self._last_interaction_time) * 1000)
         self._last_interaction_time = now
+
+        is_idle = raw_elapsed_ms > MAX_ACTIVE_TASK_HESITATION_MS or event_type == 'idle_pause'
+        hesitation_ms = min(raw_elapsed_ms, MAX_ACTIVE_TASK_HESITATION_MS) if is_idle else raw_elapsed_ms
 
         # Track repeat attempts per screen/component
         key = f"{screen_id}:{component_type}"
@@ -82,10 +92,11 @@ class GSenseEngine:
             session_id=session_id,
             screen_id=screen_id,
             component_type=component_type,
-            event_type=event_type,
+            event_type='idle_pause' if (is_idle and event_type != 'action_success') else event_type,
             attempt_count=current_attempts,
-            hesitation_ms=elapsed_ms,
+            hesitation_ms=hesitation_ms,
             is_correction=is_correction,
+            is_idle=is_idle,
             timestamp=now
         )
         self.events.append(event)
@@ -105,17 +116,24 @@ class GSenseEngine:
         if total == 0:
             return LearningSummary(
                 total_events=0,
+                active_task_events=0,
                 avg_hesitation_ms=0.0,
+                total_idle_intervals=0,
                 correction_rate=0.0,
                 repeat_attempt_rate=0.0,
-                confidence_score=0.0,
-                confidence_label="No data collected yet",
+                sample_size=0,
+                sample_target=50,
+                sample_status_label="No data collected yet",
                 recommended_assistance="hints_only",
                 explanation="No interaction data available. Defaulting to standard hints."
             )
 
-        total_hesitation = sum(e.hesitation_ms for e in self.events)
-        avg_hesitation = total_hesitation / total
+        active_events = [e for e in self.events if not e.is_idle and e.hesitation_ms <= MAX_ACTIVE_TASK_HESITATION_MS]
+        active_count = len(active_events)
+        total_idle = sum(1 for e in self.events if e.is_idle or e.hesitation_ms > MAX_ACTIVE_TASK_HESITATION_MS)
+
+        total_active_hesitation = sum(e.hesitation_ms for e in active_events)
+        avg_hesitation = total_active_hesitation / active_count if active_count > 0 else 0.0
 
         corrections = sum(1 for e in self.events if e.is_correction or e.event_type == 'correction')
         correction_rate = corrections / total
@@ -123,23 +141,22 @@ class GSenseEngine:
         repeats = sum(1 for e in self.events if e.attempt_count >= self.repeat_attempts_trigger)
         repeat_rate = repeats / total
 
-        # Confidence based on real sample volume (50 samples for 100% statistical confidence)
-        confidence = min(1.0, round(total / 50.0, 2))
-        if confidence < 0.35:
-            conf_label = "Preliminary (low sample count)"
-        elif confidence < 0.75:
-            conf_label = "Moderate (stabilizing)"
+        # Sample maturity label
+        if total < 15:
+            status_label = f"Sparse ({total} < 15 events - Insufficient data)"
+        elif total < 50:
+            status_label = f"Preliminary Sample ({total} of 50 events - Stabilizing)"
         else:
-            conf_label = "High confidence (robust sample)"
+            status_label = f"Mature Sample ({total} >= 50 events - Empirical baseline)"
 
         # Transparent rule logic
-        if avg_hesitation > self.hesitation_threshold_ms or repeat_rate > 0.25 or correction_rate > 0.30:
+        if avg_hesitation > self.hesitation_threshold_ms or repeat_rate > 0.20 or correction_rate > 0.25:
             rec = "step_by_step"
             exp = (
-                f"Elevated hesitation (avg {int(avg_hesitation)}ms) or frequent corrections "
-                f"({int(correction_rate * 100)}%) detected. Step-by-step guidance recommended."
+                f"Elevated active task hesitation (avg {int(avg_hesitation)}ms) or frequent retries "
+                f"({int(repeat_rate * 100)}%) detected. Step-by-step guidance recommended."
             )
-        elif avg_hesitation < 3500 and correction_rate < 0.10 and repeat_rate < 0.10:
+        elif active_count >= 5 and avg_hesitation < 3500 and correction_rate < 0.10 and repeat_rate < 0.08:
             rec = "minimal"
             exp = (
                 f"Fast, low-friction interactions observed (avg {int(avg_hesitation)}ms dwell). "
@@ -151,11 +168,14 @@ class GSenseEngine:
 
         return LearningSummary(
             total_events=total,
+            active_task_events=active_count,
             avg_hesitation_ms=round(avg_hesitation, 1),
+            total_idle_intervals=total_idle,
             correction_rate=round(correction_rate, 4),
             repeat_attempt_rate=round(repeat_rate, 4),
-            confidence_score=confidence,
-            confidence_label=conf_label,
+            sample_size=total,
+            sample_target=50,
+            sample_status_label=status_label,
             recommended_assistance=rec,
             explanation=exp
         )
@@ -173,7 +193,7 @@ if __name__ == "__main__":
     print("G-SENSE Python Learning Engine Initialized.")
     print("Test run: Recording sample interaction sequence...")
     engine.record_event("evt_1", "sess_01", "settings", "toggle", "navigation")
-    time.sleep(0.1)
+    time.sleep(0.05)
     engine.record_event("evt_2", "sess_01", "settings", "input", "repeat_attempt", is_correction=True)
     summary = engine.compute_summary()
     print(f"Summary: {summary}")

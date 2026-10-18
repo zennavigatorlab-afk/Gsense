@@ -31,6 +31,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onTriggerSuggest
   const [isSimulatingCorrection, setIsSimulatingCorrection] = useState(false);
 
   const handleSandboxAction = (type: 'attempt' | 'hesitate' | 'correct') => {
+    if (learningEngine.getIsPaused()) {
+      setSandboxMessage('Learning Engine is currently paused. Resume learning from the Dashboard or Profile to collect events.');
+      return;
+    }
+
     if (type === 'attempt') {
       const nextCount = sandboxAttempts + 1;
       setSandboxAttempts(nextCount);
@@ -49,7 +54,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onTriggerSuggest
         setSandboxMessage(`Attempt #${nextCount} recorded. Click again to reach repeat-attempt threshold.`);
       }
     } else if (type === 'hesitate') {
-      // Simulate artificial hesitation dwell of 9000ms
+      // Simulate artificial active hesitation dwell
       const result = learningEngine.recordEvent({
         sessionId: 'home_sandbox_session',
         screenId: 'home_sandbox',
@@ -62,14 +67,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onTriggerSuggest
         title: 'Extended pause detected',
         message: 'You paused for more than 8 seconds. Would you like a guided step-by-step walkthrough?',
         level: 'step_by_step',
-        triggerReason: 'Hesitation dwell time exceeded baseline (8.2s pause)',
+        triggerReason: 'Task hesitation dwell exceeded baseline (8.2s active pause)',
         steps: [
           'Choose your preferred assistance style in Settings.',
           'Review the field notes or hover over complex tools for context.',
         ],
       };
+      learningEngine.trackTipOffered(customSuggestion, 'home_sandbox');
       onTriggerSuggestion(customSuggestion);
-      setSandboxMessage('Simulated 8.5s hesitation. Adaptive assistant triggered.');
+      setSandboxMessage('Simulated 8.5s active task hesitation. Adaptive assistant triggered.');
     } else if (type === 'correct') {
       setIsSimulatingCorrection(true);
       const result = learningEngine.recordEvent({

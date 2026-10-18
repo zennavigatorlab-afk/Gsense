@@ -106,6 +106,33 @@ export default function App() {
     }
   }, []);
 
+  // Synchronize initial learning pause state with stored profile preference
+  useEffect(() => {
+    learningEngine.setPaused(profile.learningStatus === 'paused');
+    learningEngine.configureThresholds(
+      preferences.hesitationThresholdMs,
+      preferences.repeatAttemptsTrigger,
+      preferences.assistanceLevel
+    );
+
+    const unsubscribe = learningEngine.subscribe(() => {
+      const isEnginePaused = learningEngine.getIsPaused();
+      const currentProfileStatus = isEnginePaused ? 'paused' : 'active';
+      setProfile((prev) => {
+        if (prev.learningStatus !== currentProfileStatus) {
+          const updated = { ...prev, learningStatus: currentProfileStatus as 'active' | 'paused' };
+          saveLocalProfile(updated);
+          return updated;
+        }
+        return prev;
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   // Record permitted navigation event in learning engine
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
