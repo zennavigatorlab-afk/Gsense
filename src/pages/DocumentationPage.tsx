@@ -386,9 +386,9 @@ CREATE POLICY "Users can manage own feedback"
                 <code>
                   # Workflow File: .github/workflows/windows_build.yml<br />
                   # Runner: windows-latest (x86_64)<br />
-                  # Steps: checkout -&gt; setup python 3.11 -&gt; run test_desktop.py -&gt; build via PyInstaller<br />
+                  # Steps: checkout -&gt; setup python 3.11 -&gt; run test_desktop.py (8/8) -&gt; build via PyInstaller<br />
                   # Artifact: dist/GSense-AdaptiveAssistant.exe (with SHA-256 checksum)<br />
-                  # Trigger: git tag push (v*) or GitHub Actions manual dispatch
+                  # Triggers: push to main/master, tags (v*), PRs, or workflow_dispatch
                 </code>
               </div>
             </div>

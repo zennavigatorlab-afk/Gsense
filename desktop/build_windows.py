@@ -139,18 +139,34 @@ def build_windows_binary(trigger_build: bool = False):
             print("  ❌ PyInstaller not found in PATH. Install with: pip install pyinstaller")
             return 1
 
-        cmd = [pyinstaller_cmd, spec_path, "--clean", "--noconfirm"]
+        dist_dir = os.path.join(REPO_ROOT, "dist")
+        work_dir = os.path.join(REPO_ROOT, "build")
+        os.makedirs(dist_dir, exist_ok=True)
+        os.makedirs(work_dir, exist_ok=True)
+
+        cmd = [
+            pyinstaller_cmd,
+            spec_path,
+            "--distpath", dist_dir,
+            "--workpath", work_dir,
+            "--clean",
+            "--noconfirm"
+        ]
         print(f"    Running: {' '.join(cmd)}")
         result = subprocess.run(cmd, cwd=REPO_ROOT)
         if result.returncode == 0:
-            exe_path = os.path.join(REPO_ROOT, "dist", "GSense-AdaptiveAssistant.exe")
+            exe_path = os.path.join(dist_dir, "GSense-AdaptiveAssistant.exe")
+            alt_exe_path = os.path.join(DESKTOP_DIR, "dist", "GSense-AdaptiveAssistant.exe")
+            if not os.path.exists(exe_path) and os.path.exists(alt_exe_path):
+                shutil.copy2(alt_exe_path, exe_path)
+
             if os.path.exists(exe_path):
                 size_mb = os.path.getsize(exe_path) / (1024 * 1024)
                 print(f"\n[✓] Build Succeeded!")
                 print(f"    Output Binary: {exe_path} ({size_mb:.2f} MB)")
                 return 0
         print("  ❌ PyInstaller build failed.")
-        return result.returncode
+        return result.returncode if result.returncode != 0 else 1
 
     print("\nTo build manually on a Windows host:")
     print("  1. pip install -r desktop/requirements.txt")

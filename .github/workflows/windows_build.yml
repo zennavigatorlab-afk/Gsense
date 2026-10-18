@@ -50,16 +50,27 @@ jobs:
       - name: Validate Binary & Generate Checksum
         shell: pwsh
         run: |
-          $exePath = "dist/GSense-AdaptiveAssistant.exe"
-          if (!(Test-Path $exePath)) {
-            Write-Error "Build verification failed: $exePath does not exist!"
+          $rootExe = "dist/GSense-AdaptiveAssistant.exe"
+          $desktopExe = "desktop/dist/GSense-AdaptiveAssistant.exe"
+          
+          if (!(Test-Path "dist")) {
+            New-Item -ItemType Directory -Path "dist" -Force | Out-Null
+          }
+          
+          if (!(Test-Path $rootExe) -and (Test-Path $desktopExe)) {
+            Write-Host "[!] Located executable in desktop/dist/, copying to root dist/..."
+            Copy-Item -Path $desktopExe -Destination $rootExe -Force
+          }
+          
+          if (!(Test-Path $rootExe)) {
+            Write-Error "Build verification failed: $rootExe does not exist!"
             exit 1
           }
-          $item = Get-Item $exePath
+          $item = Get-Item $rootExe
           $sizeMb = [math]::Round($item.Length / 1MB, 2)
-          Write-Host "[✓] Executable verified: $exePath ($sizeMb MB)"
+          Write-Host "[✓] Executable verified: $rootExe ($sizeMb MB)"
           
-          $hash = (Get-FileHash -Path $exePath -Algorithm SHA256).Hash
+          $hash = (Get-FileHash -Path $rootExe -Algorithm SHA256).Hash
           Write-Host "[✓] SHA-256 Checksum: $hash"
           "$hash  GSense-AdaptiveAssistant.exe" | Out-File -Encoding utf8 "dist/checksums.sha256"
 
