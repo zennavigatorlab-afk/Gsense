@@ -15,9 +15,18 @@ import {
   Copy,
   Check,
   AlertCircle,
-  HardDrive
+  HardDrive,
+  Apple,
+  Share,
+  PlusSquare,
+  Sparkles,
+  Info,
+  Layers,
+  Brain,
+  Activity,
+  Fingerprint
 } from 'lucide-react';
-import { PWAInstallButton } from '../components/PWAInstallButton';
+import { PWAInstallButton, InstallGuideModal } from '../components/PWAInstallButton';
 
 interface DownloadsPageProps {
   onNavigate: (page: string) => void;
@@ -42,12 +51,15 @@ const WINDOWS_METADATA = {
   sha256: 'Pending verified Windows CI build artifact',
   ciWorkflow: '.github/workflows/windows_build.yml',
   desktopTestsCount: 8,
-  totalTestsCount: 31,
-  status: 'Coming Soon'
+  totalTestsCount: 37,
+  status: 'Coming Soon — CI Verification Pending'
 };
 
 export const DownloadsPage: React.FC<DownloadsPageProps> = ({ onNavigate }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [activeGuideTab, setActiveGuideTab] = useState<'android' | 'ios' | 'desktop' | 'matrix'>('android');
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [modalPlatform, setModalPlatform] = useState<'android' | 'ios' | 'desktop'>('android');
 
   const handleCopy = (key: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -125,48 +137,67 @@ exe = EXE(
     URL.revokeObjectURL(url);
   };
 
+  const openGuideModal = (platform: 'android' | 'ios' | 'desktop') => {
+    setModalPlatform(platform);
+    setShowInstallModal(true);
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-16">
       {/* Page Header */}
       <div className="max-w-3xl space-y-4">
         <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-          Distribution & Platforms
+          Distribution & Runtime Architectures
         </div>
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white [text-wrap:balance]">
-          Deploy and Run G-SENSE
+          G-SENSE Downloads & System Specs
         </h1>
         <p className="text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-          G-SENSE is engineered with a strict distinction between web, desktop, and mobile runtime architectures. We never provide broken links, fake executable wrappers, or unverified binary placeholders.
+          G-SENSE is engineered with a strict distinction between web, progressive web app, desktop, and mobile runtime architectures. We never provide broken links, fake executable wrappers, or unverified binary placeholders.
         </p>
+
+        {/* Verification Transparency Banner */}
+        <div className="rounded-xl border border-blue-200 bg-blue-50/70 dark:border-blue-900/60 dark:bg-blue-950/30 p-4 text-xs space-y-2">
+          <div className="flex items-center gap-2 font-semibold text-blue-900 dark:text-blue-200">
+            <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span>Platform Verification Audit Status</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px] text-slate-700 dark:text-slate-300 pt-1">
+            <div>• <strong>Web Assistant:</strong> Verified & Live</div>
+            <div>• <strong>PWA Manifest:</strong> W3C Standalone & Verified</div>
+            <div>• <strong>Windows Build:</strong> Pending CI Verification</div>
+            <div>• <strong>Android Native:</strong> Architecture Phase</div>
+          </div>
+        </div>
       </div>
 
-      {/* Platform Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+      {/* 4 Platform Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         {/* 1. Web Application Card */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between shadow-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between shadow-xs">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
                 <Globe className="h-5 w-5" />
               </div>
-              <span className="text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5" />
+              <span className="text-[11px] font-mono font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                 Ready & Live
               </span>
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
               Web Application
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-              The full G-SENSE adaptive assistant engine running natively in modern web browsers via TypeScript, JavaScript, and HTML5 Web Storage.
+              The full G-SENSE adaptive assistant running directly in modern web browsers via TypeScript and client-side storage.
             </p>
 
             <div className="text-xs space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 text-slate-600 dark:text-slate-400">
-              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">System Requirements:</div>
+              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">System Specs:</div>
               <div>• Chrome 100+, Firefox 98+, Safari 15+, Edge 100+</div>
-              <div>• JavaScript enabled & Web Storage</div>
               <div>• Instant zero-install browser deployment</div>
-              <div>• 100% client-side privacy architecture</div>
+              <div>• Local-first privacy architecture</div>
+              <div>• Full adaptive guidance and metrics</div>
             </div>
           </div>
 
@@ -178,62 +209,84 @@ exe = EXE(
               <span>Launch Web Assistant Now</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
-            <PWAInstallButton variant="card" />
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('add-to-devices-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full text-center text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer py-1"
+            >
+              Add to Desktop / Mobile guide ↓
+            </button>
           </div>
         </div>
 
-        {/* 2. Windows Desktop Software Card */}
-        <div className="rounded-xl border-2 border-blue-500/30 bg-white p-6 dark:border-blue-700/40 dark:bg-slate-900 flex flex-col justify-between shadow-sm relative">
+        {/* 2. Progressive Web App (PWA) Card */}
+        <div className="rounded-xl border-2 border-blue-500/30 bg-white p-5 dark:border-blue-700/40 dark:bg-slate-900 flex flex-col justify-between shadow-xs">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-                <Monitor className="h-5 w-5" />
+                <Smartphone className="h-5 w-5" />
               </div>
-              <span className="text-xs font-mono font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-amber-500" />
-                Coming Soon
+              <span className="text-[11px] font-mono font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-blue-500" />
+                PWA Verified
               </span>
             </div>
-
-            <div className="mb-1">
-              <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                Native Desktop App
-              </span>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                Windows Desktop Software
-              </h2>
-              <div className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                G-SENSE AdaptiveAssistant
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4 mt-2">
-              Native desktop assistant with Tkinter GUI, opt-in foreground window tracking (Win32), automated sensitive-window exclusion, UI Automation control boundary verification, and 100% local SQLite storage.
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
+              Progressive Web App
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+              Installable app experience for compatible Android devices and iOS Safari with offline cache and standalone display.
             </p>
 
-            {/* Technical Specifications */}
-            <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-3 mb-4 space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500">Compatibility:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">Windows 10 / 11 (64-bit)</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500">Version:</span>
-                <span className="font-mono text-slate-800 dark:text-slate-200">{WINDOWS_METADATA.version}</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500">Binary Target:</span>
-                <span className="font-mono text-slate-800 dark:text-slate-200">{WINDOWS_METADATA.binaryName}</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500">Build Status:</span>
-                <span className="text-[10px] font-mono font-medium text-amber-600 dark:text-amber-400">CI Verification Pending</span>
-              </div>
+            <div className="text-xs space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 text-slate-600 dark:text-slate-400">
+              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Supported Devices:</div>
+              <div>• Android: Samsung Galaxy, Google Pixel, Xiaomi Redmi, OnePlus, Motorola</div>
+              <div>• iOS / iPadOS: Safari Add to Home Screen</div>
+              <div>• Standalone window, no browser chrome</div>
+              <div>• Safe offline fallback (zero private cache)</div>
             </div>
           </div>
 
-          {/* Download Action Section */}
-          <div className="pt-4 space-y-2">
+          <div className="pt-6 space-y-2">
+            <PWAInstallButton variant="card" label="Install G-SENSE App" />
+            <p className="text-[10px] text-center text-slate-500 dark:text-slate-400">
+              Availability depends on browser engine &amp; device settings.
+            </p>
+          </div>
+        </div>
+
+        {/* 3. Windows Desktop App Card */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between shadow-xs">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <Monitor className="h-5 w-5" />
+              </div>
+              <span className="text-[11px] font-mono font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Clock className="h-3 w-3 text-amber-500" />
+                Coming Soon
+              </span>
+            </div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
+              Windows Desktop App
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+              Native desktop assistant with Tkinter GUI, opt-in foreground window tracking (Win32), and 100% local SQLite storage.
+            </p>
+
+            <div className="text-xs space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 text-slate-600 dark:text-slate-400">
+              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Target Build Info:</div>
+              <div>• Windows 10 / 11 (64-bit, x86_64)</div>
+              <div>• Version: {WINDOWS_METADATA.version}</div>
+              <div>• Binary: {WINDOWS_METADATA.binaryName}</div>
+              <div>• Status: CI Verification Pending</div>
+            </div>
+          </div>
+
+          <div className="pt-6 space-y-2">
             {VERIFIED_WINDOWS_RELEASE_URL ? (
               <a
                 href={VERIFIED_WINDOWS_RELEASE_URL}
@@ -244,7 +297,7 @@ exe = EXE(
                 <span>Download for Windows (64-bit)</span>
               </a>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <button
                   type="button"
                   disabled
@@ -253,14 +306,13 @@ exe = EXE(
                   className="w-full flex items-center justify-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-90"
                 >
                   <Lock className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-                  <span>Windows build pending verification</span>
+                  <span>CI Verification Pending</span>
                 </button>
-                <p className="text-[11px] text-center text-slate-500 dark:text-slate-400 leading-normal">
-                  Windows CI build pending verification. The download button will enable automatically once a real GitHub Actions release binary is published.
+                <p className="text-[10px] text-center text-slate-500 dark:text-slate-400">
+                  Executable disabled until real Windows CI build succeeds.
                 </p>
               </div>
             )}
-
             <div className="flex items-center justify-between gap-2 pt-1 text-[11px]">
               <button
                 type="button"
@@ -268,7 +320,7 @@ exe = EXE(
                 className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
               >
                 <Terminal className="h-3 w-3" />
-                <span>Build from Source</span>
+                <span>Build Source</span>
               </button>
               <a
                 href={GITHUB_REPO_URL}
@@ -283,53 +335,340 @@ exe = EXE(
           </div>
         </div>
 
-        {/* 3. Android Application Card */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between shadow-xs">
+        {/* 4. Native Android App Card */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between shadow-xs">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
-                <Smartphone className="h-5 w-5" />
+                <Layers className="h-5 w-5" />
               </div>
-              <span className="text-xs font-mono font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/60 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
+              <span className="text-[11px] font-mono font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Clock className="h-3 w-3" />
                 Architecture Phase
               </span>
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-              Android Application
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
+              Native Android App
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-              Native Kotlin architecture phase plus <strong>live installable Progressive Web App (PWA)</strong> for Android Chrome (including Xiaomi Redmi 9 / MIUI). All touch telemetry is scoped exclusively inside the app.
+              Native Kotlin architectural research planned for compatible Android phones and tablets. No APK exists yet.
             </p>
 
             <div className="text-xs space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 text-slate-600 dark:text-slate-400">
-              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Android Availability:</div>
-              <div>• <strong>PWA Ready:</strong> Installable now via Chrome on Android</div>
-              <div>• <strong>Native Kotlin:</strong> Architecture phase (API Level 31+)</div>
-              <div>• Scoped strictly inside the host application</div>
-              <div>• Zero cross-app keylogging or Accessibility abuse</div>
+              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Architecture Boundaries:</div>
+              <div>• Target: Modern Android (API 31+)</div>
+              <div>• Scoped strictly inside the host app</div>
+              <div>• Zero cross-app monitoring or Accessibility abuse</div>
+              <div>• Zero keystroke, password, or clipboard logging</div>
             </div>
           </div>
 
           <div className="pt-6 space-y-2">
-            <PWAInstallButton variant="card" />
             <button
               onClick={() => onNavigate('research')}
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 rounded-lg border border-purple-300 bg-purple-50/60 px-4 py-2.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/50 dark:text-purple-300 dark:hover:bg-purple-900/60 transition-colors cursor-pointer"
             >
-              <span>Adaptive Interaction Research</span>
+              <span>Explore Research Foundation</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
+            <p className="text-[10px] text-center text-slate-500 dark:text-slate-400">
+              Native APK is planned, not yet compiled.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Detailed Windows AdaptiveAssistant Information Section */}
+      {/* SECTION 1: Add to Desktop / Mobile — Supported Browsers & Devices Guide */}
+      <div id="add-to-devices-section" className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900 space-y-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+          <div>
+            <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
+              Installation &amp; Home Screen Guide
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+              Add to Desktop / Mobile: Practical Instructions
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Practical steps for adding G-SENSE to your home screen or desktop across supported browser engines.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openGuideModal('android')}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Install Guide Modal</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Browser Support Disclaimer Alert */}
+        <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 p-4 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold">
+              Notice: Installation steps and availability vary by browser, operating system, and device.
+            </p>
+            <p className="text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
+              We never promise installation on every mobile device or browser. For example, in-app browsers (inside Instagram, TikTok, Facebook), private/incognito tabs, and browsers lacking Web App Manifest or Service Worker support cannot install PWAs. Standalone PWA features require an HTTPS connection on production origins.
+            </p>
+          </div>
+        </div>
+
+        {/* Interactive Guide Tabs */}
+        <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 text-xs">
+          <button
+            onClick={() => setActiveGuideTab('android')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeGuideTab === 'android'
+                ? 'bg-blue-600 text-white font-semibold'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+            }`}
+          >
+            <Smartphone className="h-3.5 w-3.5" />
+            <span>Android (Chrome &amp; Compatible Devices)</span>
+          </button>
+          <button
+            onClick={() => setActiveGuideTab('ios')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeGuideTab === 'ios'
+                ? 'bg-blue-600 text-white font-semibold'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+            }`}
+          >
+            <Apple className="h-3.5 w-3.5" />
+            <span>iPhone &amp; iPad (Safari)</span>
+          </button>
+          <button
+            onClick={() => setActiveGuideTab('desktop')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeGuideTab === 'desktop'
+                ? 'bg-blue-600 text-white font-semibold'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+            }`}
+          >
+            <Monitor className="h-3.5 w-3.5" />
+            <span>Desktop (Chrome, Edge, Brave)</span>
+          </button>
+          <button
+            onClick={() => setActiveGuideTab('matrix')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeGuideTab === 'matrix'
+                ? 'bg-blue-600 text-white font-semibold'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+            }`}
+          >
+            <Info className="h-3.5 w-3.5" />
+            <span>Browser Compatibility Matrix</span>
+          </button>
+        </div>
+
+        {/* Tab 1: Android Guide */}
+        {activeGuideTab === 'android' && (
+          <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Compatible Android Phones and Tablets
+              </h3>
+              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-mono">
+                Google Chrome, Samsung Internet, Edge on Android
+              </span>
+            </div>
+            <p className="leading-relaxed">
+              Tested on compatible Android devices including <strong>Samsung Galaxy</strong> (S, A, Z series), <strong>Google Pixel</strong>, <strong>Xiaomi Redmi</strong> devices (including Redmi 9, Note series running MIUI / HyperOS), <strong>OnePlus</strong>, <strong>Motorola</strong>, and other Android 8.0+ devices with an updated Chromium-based browser.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[11px]">1</span>
+                  <span>Open Supported Browser</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Open <code>https://gsense.vercel.app/</code> in <strong>Google Chrome</strong> or <strong>Samsung Internet</strong> on your phone or tablet.
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[11px]">2</span>
+                  <span>Trigger Install Action</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Tap Chrome menu (⋮) &gt; <strong>&quot;Install app&quot;</strong>, or on Samsung Internet tap (☰) &gt; <strong>&quot;Add page to&quot;</strong> &gt; <strong>&quot;Home screen&quot;</strong>.
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[11px]">3</span>
+                  <span>OEM / Permission Check</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  On Xiaomi Redmi / MIUI / HyperOS, verify that <em>&quot;Home screen shortcuts&quot;</em> is enabled in <em>Settings &gt; Apps &gt; Chrome &gt; Other permissions</em>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: iOS & iPadOS Guide */}
+        {activeGuideTab === 'ios' && (
+          <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Apple iPhone &amp; iPad Instructions (Safari)
+              </h3>
+              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-mono">
+                iOS 15.0+ / iPadOS 15.0+ Safari
+              </span>
+            </div>
+            <p className="leading-relaxed">
+              Apple iOS supports PWA installation natively through Safari&apos;s <strong>Add to Home Screen</strong> mechanism. Third-party iOS browsers (Chrome iOS, Firefox iOS) cannot directly add standalone PWAs to the iOS home screen due to Apple WebKit restrictions.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[11px]">1</span>
+                  <span>Open Safari</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Navigate to <code>https://gsense.vercel.app/</code> in <strong>Apple Safari</strong> on your iPhone or iPad.
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[11px]">2</span>
+                  <span>Tap Share Icon</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Tap the <strong className="inline-flex items-center text-blue-600 dark:text-blue-400"><Share className="h-3 w-3 inline mx-0.5" /> Share</strong> icon in the bottom toolbar on iPhone or top navigation bar on iPad.
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[11px]">3</span>
+                  <span>Add to Home Screen</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Scroll down the share sheet, tap <strong className="inline-flex items-center text-slate-900 dark:text-white"><PlusSquare className="h-3 w-3 inline mx-0.5" /> Add to Home Screen</strong>, then tap <strong>Add</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Desktop Browsers Guide */}
+        {activeGuideTab === 'desktop' && (
+          <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Desktop Browsers (Windows, macOS, Linux, ChromeOS)
+              </h3>
+              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-mono">
+                Google Chrome, Microsoft Edge, Brave
+              </span>
+            </div>
+            <p className="leading-relaxed">
+              Chromium-based desktop browsers support one-click installation into isolated application windows that run without address bars or browser tabs.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="font-bold text-slate-900 dark:text-white">Method A: Omnibox / Address Bar Icon</div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Look at the right side of the URL bar for the install icon (monitor with a downward arrow) and click <strong>&quot;Install G-SENSE&quot;</strong>.
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="font-bold text-slate-900 dark:text-white">Method B: Browser Menu</div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Click the three vertical dots (⋮) in Chrome or (… ) in Edge &gt; <strong>&quot;Save and share&quot;</strong> or <strong>&quot;Apps&quot;</strong> &gt; <strong>&quot;Install G-SENSE&quot;</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Compatibility Matrix */}
+        {activeGuideTab === 'matrix' && (
+          <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Platform &amp; Browser Compatibility Matrix
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-[11px]">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                    <th className="p-2.5 font-semibold text-slate-900 dark:text-white">Platform / OS</th>
+                    <th className="p-2.5 font-semibold text-slate-900 dark:text-white">Browser</th>
+                    <th className="p-2.5 font-semibold text-slate-900 dark:text-white">Install Method</th>
+                    <th className="p-2.5 font-semibold text-slate-900 dark:text-white">Support Level</th>
+                    <th className="p-2.5 font-semibold text-slate-900 dark:text-white">Known Limitations</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tr>
+                    <td className="p-2.5 font-medium text-slate-900 dark:text-white">Android</td>
+                    <td className="p-2.5">Google Chrome</td>
+                    <td className="p-2.5 font-mono">beforeinstallprompt / Menu</td>
+                    <td className="p-2.5 text-emerald-600 dark:text-emerald-400 font-medium">Full Standalone</td>
+                    <td className="p-2.5 text-slate-500">MIUI may require &quot;Home shortcuts&quot; permission</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-medium text-slate-900 dark:text-white">Android</td>
+                    <td className="p-2.5">Samsung Internet</td>
+                    <td className="p-2.5 font-mono">Menu &gt; Add page to</td>
+                    <td className="p-2.5 text-emerald-600 dark:text-emerald-400 font-medium">Full Standalone</td>
+                    <td className="p-2.5 text-slate-500">Requires manual menu selection if banner ignored</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-medium text-slate-900 dark:text-white">iOS / iPadOS</td>
+                    <td className="p-2.5">Apple Safari</td>
+                    <td className="p-2.5 font-mono">Share &gt; Add to Home Screen</td>
+                    <td className="p-2.5 text-blue-600 dark:text-blue-400 font-medium">Standalone (WebKit)</td>
+                    <td className="p-2.5 text-slate-500">No automated programmatic prompt; requires manual Share tap</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-medium text-slate-900 dark:text-white">iOS / iPadOS</td>
+                    <td className="p-2.5">Chrome / Firefox iOS</td>
+                    <td className="p-2.5 font-mono">Not supported</td>
+                    <td className="p-2.5 text-amber-600 dark:text-amber-400 font-medium">Browser Only</td>
+                    <td className="p-2.5 text-slate-500">Apple restricts PWA home screen installation to Safari</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-medium text-slate-900 dark:text-white">Windows / macOS</td>
+                    <td className="p-2.5">Chrome / Edge</td>
+                    <td className="p-2.5 font-mono">Omnibox / In-App Button</td>
+                    <td className="p-2.5 text-emerald-600 dark:text-emerald-400 font-medium">Full Desktop PWA</td>
+                    <td className="p-2.5 text-slate-500">Requires HTTPS or localhost origin</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-medium text-slate-900 dark:text-white">In-App WebViews</td>
+                    <td className="p-2.5">Instagram / Facebook / TikTok</td>
+                    <td className="p-2.5 font-mono">Blocked</td>
+                    <td className="p-2.5 text-rose-600 dark:text-rose-400 font-medium">Unsupported</td>
+                    <td className="p-2.5 text-slate-500">Sandboxed in-app browsers do not support Service Workers or install</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* SECTION 2: Native Windows Desktop Specification & CI Verification */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900 space-y-8 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
           <div>
             <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
-              Desktop Specification & Guidance
+              Desktop Specification &amp; Guidance
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
               G-SENSE AdaptiveAssistant for Windows 10/11 (64-bit)
@@ -385,7 +724,7 @@ exe = EXE(
                 <Terminal className="h-4 w-4" />
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Installation & Execution Instructions
+                Windows Execution &amp; CI Invariant
               </h3>
             </div>
 
@@ -395,7 +734,7 @@ exe = EXE(
                   1
                 </span>
                 <div>
-                  <strong className="text-slate-900 dark:text-white">Download Standalone Binary:</strong> Download <code>GSense-AdaptiveAssistant.exe</code> from the verified GitHub Releases section once CI build verification completes.
+                  <strong className="text-slate-900 dark:text-white">Pending Verification:</strong> The Windows binary download remains locked until a real Windows runner in GitHub Actions builds, tests, and publishes the release artifact.
                 </div>
               </li>
               <li className="flex gap-3">
@@ -403,7 +742,7 @@ exe = EXE(
                   2
                 </span>
                 <div>
-                  <strong className="text-slate-900 dark:text-white">Zero-Installer User Space:</strong> Place the standalone executable anywhere in your user directory. No administrator permissions, background service installation, or kernel drivers are required.
+                  <strong className="text-slate-900 dark:text-white">Zero Installer Privileges:</strong> When released, <code>GSense-AdaptiveAssistant.exe</code> runs portably in user space without administrator rights or registry pollution.
                 </div>
               </li>
               <li className="flex gap-3">
@@ -411,7 +750,7 @@ exe = EXE(
                   3
                 </span>
                 <div>
-                  <strong className="text-slate-900 dark:text-white">Explicit Privacy Agreement:</strong> Upon first launch, review the opt-in monitoring agreement. Foreground window tracking is disabled by default and requires explicit confirmation.
+                  <strong className="text-slate-900 dark:text-white">Explicit Privacy Opt-in:</strong> Active window tracking is disabled by default upon first launch and requires explicit user opt-in.
                 </div>
               </li>
               <li className="flex gap-3">
@@ -419,15 +758,7 @@ exe = EXE(
                   4
                 </span>
                 <div>
-                  <strong className="text-slate-900 dark:text-white">Local SQLite Database:</strong> The app creates a local database file (<code>gsense_desktop.db</code>) initialized and retained exclusively on your device.
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 font-mono font-semibold text-slate-700 dark:text-slate-300">
-                  5
-                </span>
-                <div>
-                  <strong className="text-slate-900 dark:text-white">Desktop GUI Controls:</strong> Access live metrics, toggle Pause Learning, export data bundles (JSON / CSV), or execute a 100% irreversible local purge at any time directly through the native window.
+                  <strong className="text-slate-900 dark:text-white">Local SQLite Persistence:</strong> Stores all learned interaction aggregates in <code>gsense_desktop.db</code> locally with pause and purge controls.
                 </div>
               </li>
             </ol>
@@ -440,7 +771,7 @@ exe = EXE(
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Privacy Information & Verified Boundaries
+                Privacy Information &amp; Verified Boundaries
               </h3>
             </div>
 
@@ -469,12 +800,6 @@ exe = EXE(
                   <strong className="text-slate-900 dark:text-white">UI Automation Control Boundary:</strong> Safety filter strictly restricts permitted elements to structural controls (Buttons, Tabs, MenuItems); Edit, Text, and Password controls are permanently rejected.
                 </div>
               </li>
-              <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-900 dark:text-white">Total User Sovereignty:</strong> Instant Pause Learning halts tracking immediately; Purge All Data drops SQLite records permanently.
-                </div>
-              </li>
             </ul>
           </div>
         </div>
@@ -484,7 +809,7 @@ exe = EXE(
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Terminal className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span>GitHub Actions CI Pipeline & Local Reproducibility</span>
+              <span>GitHub Actions CI Pipeline &amp; Local Reproducibility</span>
             </h4>
             <span className="text-[11px] font-mono text-slate-500">
               Workflow: .github/workflows/windows_build.yml
@@ -534,56 +859,152 @@ exe = EXE(
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Android PWA Installation Guide (Redmi 9 / Chrome & Android Browsers) */}
-        <div className="rounded-lg border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Smartphone className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-              <span>Android PWA Installation Steps (Google Chrome on Android / Xiaomi Redmi 9)</span>
-            </h4>
-            <span className="text-[11px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded">
-              Standalone PWA Available
-            </span>
+      {/* SECTION 3: Adaptive Interaction Research Section */}
+      <div className="rounded-xl border border-purple-200 dark:border-purple-900/60 bg-white dark:bg-slate-900 p-6 sm:p-8 space-y-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100 dark:border-purple-900/40 pb-5">
+          <div>
+            <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <Brain className="h-3.5 w-3.5" />
+              <span>Adaptive Interaction Research Foundation</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+              Directions in Adaptive Human-Computer Interaction
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Investigating respectful, privacy-preserving behavioral signals to assist users experiencing interface friction.
+            </p>
           </div>
 
-          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-            G-SENSE complies with the W3C Web App Manifest specification and service worker caching standards. On your Android smartphone (tested on Chrome with Redmi 9 / MIUI), install G-SENSE with one tap to run full-screen without URL bars:
-          </p>
+          <button
+            onClick={() => onNavigate('research')}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-700 transition-colors cursor-pointer shrink-0"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Launch Research Lab &amp; Simulator</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="rounded-lg bg-white dark:bg-slate-900 p-4 border border-purple-200/60 dark:border-purple-900/40 space-y-1.5">
-              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[10px] text-white">1</span>
-                <span>Open in Mobile Chrome</span>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 text-[11px]">
-                Navigate to <code>https://gsense.vercel.app/</code> or your active deployment domain in Chrome on your Redmi 9.
-              </p>
+        {/* Critical Research Methodology Disclaimer */}
+        <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-4 text-xs text-slate-600 dark:text-slate-400 flex items-start gap-3">
+          <Info className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="font-semibold text-slate-900 dark:text-white">
+              Academic Note: Research Directions, Not Proven Inventions
             </div>
+            <p className="text-[11px] leading-relaxed">
+              These topics represent active exploratory research directions grounded in human-computer interaction literature (e.g. Fitts&apos; Law, GOMS, Keystroke-Level Modeling, and Differential Privacy). We explicitly do <strong>not</strong> claim these concepts as novel ungrounded inventions. Real-world efficacy requires empirical validation and rigorous prior-art benchmarking.
+            </p>
+          </div>
+        </div>
 
-            <div className="rounded-lg bg-white dark:bg-slate-900 p-4 border border-purple-200/60 dark:border-purple-900/40 space-y-1.5">
-              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[10px] text-white">2</span>
-                <span>Tap Menu &gt; Install App</span>
+        {/* Three Research Directions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Direction A */}
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/50 dark:bg-slate-950/40 space-y-3 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950 px-2 py-0.5 rounded">
+                  Direction A
+                </span>
+                <Activity className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </div>
-              <p className="text-slate-600 dark:text-slate-400 text-[11px]">
-                Tap the three dots (⋮) in the top-right corner of Chrome, then tap <strong>&quot;Install app&quot;</strong> (or tap the <strong>Install PWA</strong> button in the navigation bar).
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                In-App Interaction-Pattern Learning
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Detecting hesitation pauses (dwell intervals &gt;8000ms), repeated click attempts, and navigation backtracking strictly inside the G-SENSE application.
               </p>
+              <ul className="text-[11px] text-slate-500 space-y-1 pt-1">
+                <div>• Distinguishes active task dwell from idle time</div>
+                <div>• Zero keystroke or text recording</div>
+                <div>• Local-first inference with confidence tiers</div>
+              </ul>
             </div>
+            <div className="pt-2 text-[11px] font-mono text-purple-700 dark:text-purple-300 border-t border-slate-200 dark:border-slate-800">
+              Prior Art: Card et al. (1983) GOMS; Horvitz (1999) Mixed-Initiative
+            </div>
+          </div>
 
-            <div className="rounded-lg bg-white dark:bg-slate-900 p-4 border border-purple-200/60 dark:border-purple-900/40 space-y-1.5">
-              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[10px] text-white">3</span>
-                <span>Redmi 9 / MIUI Setting</span>
+          {/* Direction B */}
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/50 dark:bg-slate-950/40 space-y-3 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950 px-2 py-0.5 rounded">
+                  Direction B
+                </span>
+                <ShieldCheck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </div>
-              <p className="text-slate-600 dark:text-slate-400 text-[11px]">
-                On Xiaomi MIUI, ensure Chrome is granted <em>&quot;Home screen shortcuts&quot;</em> in <em>Settings &gt; Apps &gt; Manage Apps &gt; Chrome &gt; Other Permissions</em>.
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Privacy-Preserving Android Signals
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Researching permitted, explicitly consented Android interaction signals without ever collecting private user content or abusing OS privileges.
               </p>
+              <ul className="text-[11px] text-slate-500 space-y-1 pt-1">
+                <div>• Zero cross-app surveillance or screen capture</div>
+                <div>• No keylogger or clipboard accessibility exploitation</div>
+                <div>• Explicit consent with instant pause and purge</div>
+              </ul>
+            </div>
+            <div className="pt-2 text-[11px] font-mono text-purple-700 dark:text-purple-300 border-t border-slate-200 dark:border-slate-800">
+              Prior Art: Dwork et al. (2006) Differential Privacy; Android CDD
+            </div>
+          </div>
+
+          {/* Direction C */}
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/50 dark:bg-slate-950/40 space-y-3 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950 px-2 py-0.5 rounded">
+                  Direction C
+                </span>
+                <Fingerprint className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Alternative Human-Computer Communication
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Investigating communication modalities beyond conventional typing, voice, or standard gestures to support diverse motor and cognitive capabilities.
+              </p>
+              <ul className="text-[11px] text-slate-500 space-y-1 pt-1">
+                <div>• Micro-dwell intent sensing (timed fixation)</div>
+                <div>• Rhythmic cadence signaling for binary selection</div>
+                <div>• Adaptive switch and gaze estimation simulations</div>
+              </ul>
+            </div>
+            <div className="pt-2 text-[11px] font-mono text-purple-700 dark:text-purple-300 border-t border-slate-200 dark:border-slate-800">
+              Prior Art: MacKenzie (1992) Fitts&apos; Law; Jacob (1990) Eye Gaze
             </div>
           </div>
         </div>
+
+        {/* User Sovereignty Summary Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-lg bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/40 text-xs">
+          <div className="flex items-center gap-2 text-purple-900 dark:text-purple-200">
+            <ShieldCheck className="h-4 w-4 text-purple-600 shrink-0" />
+            <span>
+              All research prototypes require explicit opt-in consent, support instant pause, and provide complete data export and purge controls.
+            </span>
+          </div>
+          <button
+            onClick={() => onNavigate('research')}
+            className="text-xs font-semibold text-purple-700 dark:text-purple-300 hover:underline cursor-pointer shrink-0"
+          >
+            Open Interactive Research Lab →
+          </button>
+        </div>
       </div>
+
+      {/* Guide Modal */}
+      {showInstallModal && (
+        <InstallGuideModal
+          initialPlatform={modalPlatform}
+          onClose={() => setShowInstallModal(false)}
+        />
+      )}
     </div>
   );
 };
