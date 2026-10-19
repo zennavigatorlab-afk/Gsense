@@ -7,12 +7,25 @@ Tests:
 4. GSenseEngine learning rules, dwell separation, sample maturity
 5. JSON and RFC 4180 CSV export formatting
 6. Full local data purge verification
+7. SQLite persistence & settings store hydration roundtrip
+8. Windows build spec generation & desktop module import verification
 """
 
 import sys
 import os
 import json
 import csv
+
+# Ensure UTF-8 output encoding across Windows consoles (CP1252 / OEM charmap safety)
+os.environ["PYTHONIOENCODING"] = "utf-8"
+os.environ["PYTHONUTF8"] = "1"
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 # Add current folder to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -28,7 +41,7 @@ from gsense_engine import GSenseEngine, InteractionEvent
 
 def assert_true(condition, msg):
     if not condition:
-        print(f"❌ FAIL: {msg}")
+        print(f"[FAIL] {msg}")
         sys.exit(1)
 
 def run_tests():
@@ -54,11 +67,11 @@ def run_tests():
         ("Visual Studio Code", "code.exe"),
         ("Downloads", "explorer.exe"),
         ("Calculator", "calc.exe"),
-        ("G-SENSE — AdaptiveAssistant Desktop", "python.exe")
+        ("G-SENSE - AdaptiveAssistant Desktop", "python.exe")
     ]
     for title, proc in normal_samples:
         assert_true(is_sensitive_window(title, proc) is False, f"Incorrectly flagged normal window: {title}")
-    print("  ✓ Sensitive windows (passwords, banking, private browsing) successfully excluded.\n")
+    print("  [PASS] Sensitive windows (passwords, banking, private browsing) successfully excluded.\n")
 
     # Test 2: UI Automation Permitted vs Forbidden Controls
     print("Test 2: UI Automation Control Security Boundaries...")
@@ -77,7 +90,7 @@ def run_tests():
         assert_true(res is not None, f"Permitted control type was rejected: {good_ctrl}")
         assert_true("text" not in res, "Event must not contain text values")
         assert_true("value" not in res, "Event must not contain form values")
-    print("  ✓ UI Automation verified: strictly permits buttons/tabs; blocks text and edit controls.\n")
+    print("  [PASS] UI Automation verified: strictly permits buttons/tabs; blocks text and edit controls.\n")
 
     # Test 3: Opt-in Invariant
     print("Test 3: Active Window Tracker Opt-in Invariant...")
@@ -87,7 +100,7 @@ def run_tests():
     assert_true(default_tracker.is_paused is True, "Pause state must be respected")
     default_tracker.resume()
     assert_true(default_tracker.is_paused is False, "Resume state must be respected")
-    print("  ✓ Opt-in default and pause/resume compliance verified.\n")
+    print("  [PASS] Opt-in default and pause/resume compliance verified.\n")
 
     # Test 4: Learning Rules & Dwell Separation
     print("Test 4: Learning Rules & Idle Separation...")
@@ -102,7 +115,7 @@ def run_tests():
     assert_true(summary.total_idle_intervals == 1, f"Expected 1 idle interval, got {summary.total_idle_intervals}")
     assert_true(summary.active_task_events == 2, f"Expected 2 active events, got {summary.active_task_events}")
     assert_true("Sparse" in summary.sample_status_label, f"Expected Sparse sample status, got {summary.sample_status_label}")
-    print("  ✓ Active dwell accurately separated from idle pauses (>30s).\n")
+    print("  [PASS] Active dwell accurately separated from idle pauses (>30s).\n")
 
     # Test 5: CSV & JSON Exports
     print("Test 5: Export Formatting (JSON & CSV)...")
@@ -116,7 +129,7 @@ def run_tests():
     header = csv_reader[0]
     assert_true("event_id" in header and "component_type" in header, "Invalid CSV headers")
     assert_true(len(csv_reader) == 4, f"Expected header + 3 rows in CSV, got {len(csv_reader)}")
-    print("  ✓ JSON and RFC 4180 CSV exports verified with privacy declarations.\n")
+    print("  [PASS] JSON and RFC 4180 CSV exports verified with privacy declarations.\n")
 
     # Test 6: Purge All Data
     print("Test 6: Full Local Data Purge...")
@@ -124,7 +137,7 @@ def run_tests():
     assert_true(len(engine.events) == 0, "Events not purged from memory")
     cleared_summary = engine.compute_summary()
     assert_true(cleared_summary.total_events == 0, "Summary not reset to zero")
-    print("  ✓ Full data purge verified.\n")
+    print("  [PASS] Full data purge verified.\n")
 
     # Test 7: SQLite Persistence & Startup Hydration Roundtrip
     print("Test 7: SQLite Local Storage Persistence & Hydration...")
@@ -168,7 +181,7 @@ def run_tests():
             os.remove(temp_db)
         except OSError:
             pass
-    print("  ✓ SQLite persistence, settings store, and purge roundtrip verified.\n")
+    print("  [PASS] SQLite persistence, settings store, and purge roundtrip verified.\n")
 
     # Test 8: Windows Build Spec Generation & Module Verification
     print("Test 8: PyInstaller Spec Generation & Desktop Module Verification...")
@@ -180,10 +193,10 @@ def run_tests():
         spec_text = f.read()
     assert_true("GSense-AdaptiveAssistant" in spec_text, "Missing executable name in spec")
     assert_true("window_tracker" in spec_text, "Missing window_tracker hiddenimport in spec")
-    print("  ✓ Desktop packaging spec generation and module imports verified.\n")
+    print("  [PASS] Desktop packaging spec generation and module imports verified.\n")
 
     print("==================================================================")
-    print("     ✓ ALL 8 G-SENSE DESKTOP VERIFICATION TESTS PASSED (100%)")
+    print("     [PASS] ALL 8 G-SENSE DESKTOP VERIFICATION TESTS PASSED (100%)")
     print("==================================================================\n")
 
 if __name__ == "__main__":

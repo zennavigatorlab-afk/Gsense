@@ -22,6 +22,9 @@ jobs:
   build-windows:
     name: Build & Package 64-bit Windows EXE
     runs-on: windows-latest
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: 'utf-8'
 
     steps:
       - name: Checkout Repository
@@ -35,15 +38,24 @@ jobs:
           cache: 'pip'
 
       - name: Install Dependencies
+        env:
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: 'utf-8'
         run: |
           python -m pip install --upgrade pip
           pip install -r desktop/requirements.txt
 
       - name: Run Automated Verification Tests
+        env:
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: 'utf-8'
         run: |
           python desktop/test_desktop.py
 
       - name: Generate Packaging Spec and Build Binary
+        env:
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: 'utf-8'
         run: |
           python desktop/build_windows.py --build
 
@@ -68,10 +80,10 @@ jobs:
           }
           $item = Get-Item $rootExe
           $sizeMb = [math]::Round($item.Length / 1MB, 2)
-          Write-Host "[✓] Executable verified: $rootExe ($sizeMb MB)"
+          Write-Host "[OK] Executable verified: $rootExe ($sizeMb MB)"
           
           $hash = (Get-FileHash -Path $rootExe -Algorithm SHA256).Hash
-          Write-Host "[✓] SHA-256 Checksum: $hash"
+          Write-Host "[OK] SHA-256 Checksum: $hash"
           "$hash  GSense-AdaptiveAssistant.exe" | Out-File -Encoding utf8 "dist/checksums.sha256"
 
       - name: Upload Windows Executable Artifact

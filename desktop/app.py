@@ -15,6 +15,16 @@ import json
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from dataclasses import asdict
+
+# Ensure UTF-8 output encoding across Windows consoles (CP1252 / charmap safety)
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 from gsense_engine import GSenseEngine, InteractionEvent
 from storage import DesktopStorage
 from window_tracker import ActiveWindowTracker, is_sensitive_window
@@ -22,7 +32,7 @@ from window_tracker import ActiveWindowTracker, is_sensitive_window
 class GSenseDesktopApp:
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("G-SENSE — AdaptiveAssistant Desktop")
+        self.root.title("G-SENSE - AdaptiveAssistant Desktop")
         self.root.geometry("680x560")
         self.root.minsize(600, 500)
 
@@ -46,7 +56,7 @@ class GSenseDesktopApp:
 
         title_lbl = tk.Label(
             header,
-            text="G-SENSE AdaptiveAssistant — Desktop",
+            text="G-SENSE AdaptiveAssistant - Desktop",
             font=("Segoe UI", 14, "bold"),
             fg="#F8FAFC",
             bg="#1E293B"
@@ -328,10 +338,10 @@ class GSenseDesktopApp:
         if enabled:
             msg = (
                 "Opt-in Consent for Active Window Tracking:\n\n"
-                "• G-SENSE will monitor active foreground application names (e.g. explorer.exe, code.exe) "
+                "* G-SENSE will monitor active foreground application names (e.g. explorer.exe, code.exe) "
                 "and permitted UI Automation clicks (buttons, tabs).\n"
-                "• It will NEVER record keystrokes, typed text, passwords, clipboard, or screen contents.\n"
-                "• Sensitive windows (password managers, banking, incognito) are automatically excluded.\n\n"
+                "* It will NEVER record keystrokes, typed text, passwords, clipboard, or screen contents.\n"
+                "* Sensitive windows (password managers, banking, incognito) are automatically excluded.\n\n"
                 "Do you wish to enable active window tracking?"
             )
             if messagebox.askyesno("G-SENSE Permission Consent", msg):

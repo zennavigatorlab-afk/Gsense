@@ -86,9 +86,15 @@ if (!indexHtmlContent.includes('name="apple-mobile-web-app-capable" content="yes
   throw new Error('iOS standalone web app meta tag missing');
 }
 if (!indexHtmlContent.includes('google-site-verification" content="y7dA711cbtJ0OStNKa5L-Jwo5ck1XcVE_75tRQ9vg-s"')) {
-  throw new Error('Google Search Console verification tag was modified or lost');
+  throw new Error('Previous Google Search Console verification tag was modified or lost');
 }
-console.log('  ✓ index.html includes mobile viewport, theme-color, apple-mobile-web-app-capable, and preserves Search Console verification.');
+if (!indexHtmlContent.includes('google-site-verification" content="VCtFFd13OxycSf3pHr-1y5BUkt0-7ziEOHPEfc7NgWk"')) {
+  throw new Error('New Google Search Console verification tag (VCtFFd13OxycSf3pHr-1y5BUkt0-7ziEOHPEfc7NgWk) missing');
+}
+if (indexHtmlContent.includes('CteqvUVzZV6uzMFs_YvtJV0gMBE3cAlaoy-LD-W5824')) {
+  throw new Error('DNS TXT verification value must not be inserted into HTML');
+}
+console.log('  ✓ index.html includes mobile viewport, theme-color, apple-mobile-web-app-capable, and preserves both Search Console verification tags.');
 passedTests++;
 
 // Test 5: Research Telemetry Privacy Invariants

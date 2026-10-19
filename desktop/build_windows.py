@@ -14,6 +14,17 @@ import argparse
 import subprocess
 import shutil
 
+# Ensure UTF-8 output encoding across Windows consoles (CP1252 / OEM fallback safety)
+os.environ["PYTHONIOENCODING"] = "utf-8"
+os.environ["PYTHONUTF8"] = "1"
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 DESKTOP_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.abspath(os.path.join(DESKTOP_DIR, ".."))
 
@@ -22,21 +33,32 @@ def generate_spec_file(output_spec_path: str = None) -> str:
     if output_spec_path is None:
         output_spec_path = os.path.join(DESKTOP_DIR, "GSense.spec")
 
-    app_py_path = os.path.join(DESKTOP_DIR, "app.py").replace("\\", "/")
-    desktop_path = DESKTOP_DIR.replace("\\", "/")
-
-    spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
+    spec_content = """# -*- mode: python ; coding: utf-8 -*-
 # G-SENSE Standalone Windows Executable Specification
 
 import os
 import sys
 
 block_cipher = None
-desktop_path = r'{desktop_path}'
+
+# Locate desktop directory dynamically based on spec location
+try:
+    base_dir = os.path.abspath(SPECPATH)
+except NameError:
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+
+if os.path.basename(base_dir) == "desktop":
+    desktop_dir = base_dir
+    repo_root = os.path.abspath(os.path.join(base_dir, ".."))
+else:
+    desktop_dir = os.path.join(base_dir, "desktop")
+    repo_root = base_dir
+
+app_entry = os.path.join(desktop_dir, "app.py")
 
 a = Analysis(
-    ['{app_py_path}'],
-    pathex=[desktop_path],
+    [app_entry],
+    pathex=[desktop_dir, repo_root],
     binaries=[],
     datas=[],
     hiddenimports=[
@@ -50,7 +72,7 @@ a = Analysis(
         'window_tracker'
     ],
     hookspath=[],
-    hooksconfig={{}},
+    hooksconfig={},
     runtime_hooks=[],
     excludes=['matplotlib', 'numpy', 'scipy', 'pandas', 'IPython', 'pytest'],
     win_no_prefer_redirects=False,
@@ -103,12 +125,12 @@ def verify_modules():
         import gsense_engine
         import storage
         import window_tracker
-        print("  ✓ gsense_engine.py: OK")
-        print("  ✓ storage.py: OK")
-        print("  ✓ window_tracker.py: OK")
+        print("  [OK] gsense_engine.py: OK")
+        print("  [OK] storage.py: OK")
+        print("  [OK] window_tracker.py: OK")
         return True
     except Exception as e:
-        print(f"  ❌ Import error: {e}")
+        print(f"  [ERROR] Import error: {e}")
         return False
 
 def build_windows_binary(trigger_build: bool = False):
@@ -120,7 +142,7 @@ def build_windows_binary(trigger_build: bool = False):
         sys.exit(1)
 
     spec_path = generate_spec_file()
-    print(f"[✓] Created PyInstaller specification at: {spec_path}")
+    print(f"[OK] Created PyInstaller specification at: {spec_path}")
 
     # Inspect current platform
     is_windows = sys.platform == "win32"
@@ -130,14 +152,14 @@ def build_windows_binary(trigger_build: bool = False):
         print("    to link Win32 runtime libraries and create valid PE headers.")
         print("    The GitHub Actions CI workflow (.github/workflows/windows_build.yml)")
         print("    is configured to automatically compile and release 'GSense-AdaptiveAssistant.exe'.")
-        print("\n[✓] Specification generation and pre-flight module verification completed.")
+        print("\n[OK] Specification generation and pre-flight module verification completed.")
         return 0
 
     if trigger_build:
         print("\n[*] Host is Windows! Initiating PyInstaller build...")
         pyinstaller_cmd = shutil.which("pyinstaller")
         if not pyinstaller_cmd:
-            print("  ❌ PyInstaller not found in PATH. Install with: pip install pyinstaller")
+            print("  [ERROR] PyInstaller not found in PATH. Install with: pip install pyinstaller")
             return 1
 
         dist_dir = os.path.join(REPO_ROOT, "dist")
@@ -163,10 +185,10 @@ def build_windows_binary(trigger_build: bool = False):
 
             if os.path.exists(exe_path):
                 size_mb = os.path.getsize(exe_path) / (1024 * 1024)
-                print(f"\n[✓] Build Succeeded!")
+                print(f"\n[OK] Build Succeeded!")
                 print(f"    Output Binary: {exe_path} ({size_mb:.2f} MB)")
                 return 0
-        print("  ❌ PyInstaller build failed.")
+        print("  [ERROR] PyInstaller build failed.")
         return result.returncode if result.returncode != 0 else 1
 
     print("\nTo build manually on a Windows host:")
