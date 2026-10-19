@@ -32,13 +32,32 @@ interface DownloadsPageProps {
   onNavigate: (page: string) => void;
 }
 
-// GitHub repository reference
+// GitHub repository and workflow references
 const GITHUB_REPO_URL = 'https://github.com/zennavigatorlab-afk/Gsense';
+const GITHUB_WORKFLOW_RUN_URL = 'https://github.com/zennavigatorlab-afk/Gsense/actions/runs/39244301696';
+const GITHUB_ACTIONS_URL = 'https://github.com/zennavigatorlab-afk/Gsense/actions';
 
-// Real GitHub Release asset URL configuration.
-// IMPORTANT: Only populate this with a verified, live release binary URL once GitHub Actions CI
-// has successfully built, verified, and published the release artifact to GitHub Releases.
-// When null, the UI strictly displays "Windows build pending verification" and disables download.
+// Verified CI build data from GitHub Actions Workflow Run #7 (Commit a3e6be8)
+const WINDOWS_CI_VERIFICATION = {
+  buildPassed: true,
+  runNumber: 7,
+  runId: '39244301696',
+  commitSha: 'a3e6be8',
+  artifactName: 'GSense-AdaptiveAssistant-Windows-x64',
+  artifactSizeMb: 11.3,
+  artifactExpires: 'November 18, 2026',
+  artifactZipSha256: '696990bf2359be1471d369d6e1bced66ffa93bcbadc1d3aa4f0c25cfbb597b3d',
+  testsPassed: 8,
+  totalDesktopTests: 8,
+  binaryName: 'GSense-AdaptiveAssistant.exe',
+  releasePublished: false,
+};
+
+// Permanent GitHub Release asset URL configuration.
+// Verified: GitHub Actions Workflow Run #7 successfully built and uploaded the CI artifact,
+// but the 'Publish to GitHub Release' step was skipped (0 releases published).
+// Direct permanent release download is null, while the verified GitHub Actions workflow
+// artifact is available to logged-in GitHub users on the workflow run page.
 const VERIFIED_WINDOWS_RELEASE_URL: string | null = null;
 
 // Audit-verified metadata for G-SENSE AdaptiveAssistant Windows release
@@ -48,11 +67,12 @@ const WINDOWS_METADATA = {
   version: 'v0.1.0-preview',
   binaryName: 'GSense-AdaptiveAssistant.exe',
   format: 'Standalone 64-bit PE Executable (PyInstaller)',
-  sha256: 'Pending verified Windows CI build artifact',
+  sha256: 'Packaged in artifact (checksums.sha256)',
+  artifactDigest: '696990bf2359be1471d369d6e1bced66ffa93bcbadc1d3aa4f0c25cfbb597b3d',
   ciWorkflow: '.github/workflows/windows_build.yml',
   desktopTestsCount: 8,
-  totalTestsCount: 37,
-  status: 'Coming Soon — CI Verification Pending'
+  totalTestsCount: 44,
+  status: 'CI Build Passed — Workflow Artifact Available'
 };
 
 export const DownloadsPage: React.FC<DownloadsPageProps> = ({ onNavigate }) => {
@@ -265,9 +285,9 @@ exe = EXE(
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                 <Monitor className="h-5 w-5" />
               </div>
-              <span className="text-[11px] font-mono font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Clock className="h-3 w-3 text-amber-500" />
-                Coming Soon — CI Verification Pending
+              <span className="text-[11px] font-mono font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                CI Build Passed — Workflow Artifact Available
               </span>
             </div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
@@ -278,41 +298,57 @@ exe = EXE(
             </p>
 
             <div className="text-xs space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 text-slate-600 dark:text-slate-400">
-              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Target Build Info:</div>
-              <div>• Windows 10 / 11 (64-bit, x86_64)</div>
+              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Verified CI Build Info:</div>
+              <div>• Target OS: Windows 10 / 11 (64-bit, x86_64)</div>
               <div>• Version: {WINDOWS_METADATA.version}</div>
               <div>• Binary: {WINDOWS_METADATA.binaryName}</div>
-              <div>• Status: Coming Soon — CI Verification Pending</div>
+              <div>• CI Status: <span className="font-semibold text-emerald-600 dark:text-emerald-400">Workflow #7 ({WINDOWS_CI_VERIFICATION.commitSha}) Passed</span></div>
+              <div>• Artifact: <span className="font-mono text-[11px]">{WINDOWS_CI_VERIFICATION.artifactName}</span> ({WINDOWS_CI_VERIFICATION.artifactSizeMb} MB)</div>
+              <div>• GitHub Artifact Digest: <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 truncate block">{WINDOWS_CI_VERIFICATION.artifactZipSha256}</span></div>
             </div>
           </div>
 
-          <div className="pt-6 space-y-2">
-            {VERIFIED_WINDOWS_RELEASE_URL ? (
-              <a
-                href={VERIFIED_WINDOWS_RELEASE_URL}
-                download={WINDOWS_METADATA.binaryName}
-                className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-xs"
-              >
-                <Download className="h-4 w-4" />
-                <span>Download for Windows (64-bit)</span>
-              </a>
-            ) : (
-              <div className="space-y-1.5">
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  title="Windows EXE build is pending verification by GitHub Actions CI runner. No unverified binary is served."
-                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-90"
-                >
-                  <Lock className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-                  <span>Coming Soon — CI Verification Pending</span>
-                </button>
-                <p className="text-[10px] text-center text-slate-500 dark:text-slate-400">
-                  Executable disabled until real Windows CI build succeeds.
-                </p>
+          <div className="pt-6 space-y-2.5">
+            {/* Primary Action: Direct link to verified GitHub Actions Workflow Run #7 Artifact */}
+            <a
+              href={GITHUB_WORKFLOW_RUN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors cursor-pointer shadow-xs"
+            >
+              <Download className="h-4 w-4" />
+              <span>Download Workflow Artifact (GitHub Actions Run #7)</span>
+              <ExternalLink className="h-3 w-3 opacity-80" />
+            </a>
+
+            {/* Clear distinction, expiration notice, and digest disclaimer */}
+            <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2.5 border border-slate-200/80 dark:border-slate-700/80 text-[11px] space-y-1.5 text-slate-600 dark:text-slate-300">
+              <div className="flex items-start gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                <span>
+                  <strong>Workflow Artifact (Ready &amp; Verified):</strong> Build #7 succeeded on commit <code>{WINDOWS_CI_VERIFICATION.commitSha}</code>. Contains <code>GSense-AdaptiveAssistant.exe</code> and <code>checksums.sha256</code>.
+                </span>
               </div>
-            )}
+              <div className="flex items-start gap-1.5 text-amber-700 dark:text-amber-300">
+                <Clock className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+                <span>
+                  <strong>Artifact Expiration Notice:</strong> Retained for 30 days on GitHub Actions (expires {WINDOWS_CI_VERIFICATION.artifactExpires}). Requires GitHub account login to download from the Actions run.
+                </span>
+              </div>
+              <div className="flex items-start gap-1.5 text-slate-500 dark:text-slate-400">
+                <Info className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
+                <span>
+                  <strong>Digest Clarification:</strong> The SHA-256 digest above is GitHub's artifact archive container digest. The standalone executable checksum is generated by the Windows runner into <code>checksums.sha256</code> inside the archive and has not been independently verified against an extracted file outside CI.
+                </span>
+              </div>
+              <div className="flex items-start gap-1.5 text-slate-500 dark:text-slate-400">
+                <Lock className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
+                <span>
+                  <strong>Permanent Release:</strong> Direct unauthenticated download will unlock once a release tag (e.g. <code>v0.1.0</code>) is published to GitHub Releases.
+                </span>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between gap-2 pt-1 text-[11px]">
               <button
                 type="button"
@@ -323,12 +359,12 @@ exe = EXE(
                 <span>Build Source</span>
               </button>
               <a
-                href={GITHUB_REPO_URL}
+                href={GITHUB_WORKFLOW_RUN_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1"
               >
-                <span>GitHub Repo</span>
+                <span>Workflow #7 Run Page</span>
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
@@ -707,11 +743,55 @@ exe = EXE(
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950">
             <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Verification Status</div>
-            <div className="mt-1 text-sm font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" />
-              <span>CI Verification Pending</span>
+            <div className="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              <span>CI Build Passed</span>
             </div>
-            <div className="mt-1 text-[11px] text-slate-500">SHA-256 generated upon publish</div>
+            <div className="mt-1 text-[11px] text-slate-500">Workflow #7 (Commit a3e6be8)</div>
+          </div>
+        </div>
+
+        {/* Verified Workflow #7 Artifact Status Panel */}
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4.5 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Verified GitHub Actions Build Record: Workflow Run #7
+                </h3>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Executed on <code>windows-latest</code> (x64) for commit <code>{WINDOWS_CI_VERIFICATION.commitSha}</code>
+                </p>
+              </div>
+            </div>
+            <a
+              href={GITHUB_WORKFLOW_RUN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors shrink-0"
+            >
+              <span>View Workflow Run #7</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+            <div className="rounded-lg bg-white/80 dark:bg-slate-900/80 p-3 border border-emerald-100 dark:border-emerald-900/40">
+              <div className="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400">Automated Tests</div>
+              <div className="font-semibold text-emerald-700 dark:text-emerald-300 mt-0.5">8/8 Desktop Tests Passed (100%)</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">Privacy boundaries &amp; dwell separation verified</div>
+            </div>
+            <div className="rounded-lg bg-white/80 dark:bg-slate-900/80 p-3 border border-emerald-100 dark:border-emerald-900/40">
+              <div className="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400">Workflow Artifact</div>
+              <div className="font-semibold text-slate-900 dark:text-white mt-0.5 font-mono">{WINDOWS_CI_VERIFICATION.artifactName}</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">{WINDOWS_CI_VERIFICATION.artifactSizeMb} MB zip • Retained until {WINDOWS_CI_VERIFICATION.artifactExpires}</div>
+            </div>
+            <div className="rounded-lg bg-white/80 dark:bg-slate-900/80 p-3 border border-emerald-100 dark:border-emerald-900/40 sm:col-span-2 lg:col-span-1">
+              <div className="text-[10px] uppercase font-mono text-slate-500 dark:text-slate-400">Artifact Archive Digest</div>
+              <div className="font-mono text-[10px] text-slate-700 dark:text-slate-300 break-all mt-0.5 select-all">{WINDOWS_CI_VERIFICATION.artifactZipSha256}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">GitHub archive container digest (executable checksum inside zip)</div>
+            </div>
           </div>
         </div>
 
@@ -734,7 +814,7 @@ exe = EXE(
                   1
                 </span>
                 <div>
-                  <strong className="text-slate-900 dark:text-white">Pending Verification:</strong> The Windows binary download remains locked until a real Windows runner in GitHub Actions builds, tests, and publishes the release artifact.
+                  <strong className="text-slate-900 dark:text-white">CI Build Passed &amp; Artifact Ready:</strong> The Windows binary was built and verified on a 64-bit Windows runner in GitHub Actions Workflow Run #7 (commit <code>{WINDOWS_CI_VERIFICATION.commitSha}</code>). Logged-in GitHub accounts can download <code>GSense-AdaptiveAssistant-Windows-x64</code> (11.3 MB) from the Actions run page (expires {WINDOWS_CI_VERIFICATION.artifactExpires}). Extract the zip to run <code>GSense-AdaptiveAssistant.exe</code> portably.
                 </div>
               </li>
               <li className="flex gap-3">
