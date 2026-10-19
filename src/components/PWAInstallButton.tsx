@@ -211,7 +211,7 @@ export const InstallGuideModal: React.FC<InstallGuideModalProps> = ({ initialPla
               <span className="text-[10px] text-slate-500 font-mono">Chrome / Samsung Internet</span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Works across compatible Android devices, including <strong>Samsung Galaxy</strong>, <strong>Google Pixel</strong>, <strong>Xiaomi Redmi</strong> (including Redmi 9 / MIUI / HyperOS), <strong>OnePlus</strong>, <strong>Motorola</strong>, and other supported Android devices.
+              Designed for standards-compliant modern Android devices running Chrome or Samsung Internet. (PWA installation support is browser- and vendor-dependent; physical models are not individually certified).
             </p>
             <ol className="space-y-2 list-decimal list-inside bg-slate-50 dark:bg-slate-950/60 p-3.5 rounded-lg border border-slate-200 dark:border-slate-800">
               <li>
@@ -227,7 +227,7 @@ export const InstallGuideModal: React.FC<InstallGuideModalProps> = ({ initialPla
                 Confirm by tapping <strong>Install</strong>.
               </li>
               <li className="text-[11px] text-slate-500 dark:text-slate-400">
-                <em>Xiaomi Redmi / MIUI note:</em> If shortcuts are blocked, grant <em>&quot;Home screen shortcuts&quot;</em> in <em>Settings &gt; Apps &gt; Manage Apps &gt; Chrome &gt; Other Permissions</em>.
+                <em>Xiaomi Redmi (e.g. Redmi 9 / MIUI / HyperOS) note:</em> If shortcuts are blocked, grant <em>&quot;Home screen shortcuts&quot;</em> in <em>Settings &gt; Apps &gt; Manage Apps &gt; Chrome &gt; Other Permissions</em>.
               </li>
             </ol>
             <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[11px] text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50">

@@ -26,6 +26,7 @@ export interface RecordOptions {
   isCorrection?: boolean;
   isSimulation?: boolean;
   explicitHesitationMs?: number;
+  explicitTimestamp?: number;
   userId?: string;
 }
 
@@ -33,6 +34,7 @@ export interface EngineThresholdConfig {
   hesitationThresholdMs: number;
   maxActiveTaskHesitationMs: number;
   repeatAttemptsTrigger: number;
+  repeatWindowMs: number;
   backtrackWindowMs: number;
   cooldownPeriodMs: number;
   autoSuggestionsEnabled: boolean;
@@ -42,9 +44,16 @@ export const DEFAULT_MAX_ACTIVE_TASK_HESITATION_MS = 30000; // 30 seconds cutoff
 export const MAX_ACTIVE_TASK_HESITATION_MS = DEFAULT_MAX_ACTIVE_TASK_HESITATION_MS;
 export const TARGET_SAMPLE_SIZE = 50;
 
+interface AttemptRecord {
+  count: number;
+  lastTimestamp: number;
+  screenId: string;
+  componentType: string;
+}
+
 export class GSenseBrowserEngine {
   private lastInteractionTime: number = Date.now();
-  private attemptMap: Map<string, number> = new Map();
+  private attemptMap: Map<string, AttemptRecord> = new Map();
   private isPaused: boolean = false;
   private currentAssistanceLevel: AssistanceLevel = 'hints_only';
 
@@ -52,6 +61,7 @@ export class GSenseBrowserEngine {
   private hesitationThresholdMs: number = 8000; // 8s active dwell threshold (pauses never assumed to mean confusion)
   private maxActiveTaskHesitationMs: number = DEFAULT_MAX_ACTIVE_TASK_HESITATION_MS;
   private repeatAttemptsTrigger: number = 3; // 3 retries on same component
+  private repeatWindowMs: number = 30000; // 30s documented window for qualifying repeated attempts
   private backtrackWindowMs: number = 15000; // 15s rapid return window
   private cooldownPeriodMs: number = 180000; // 3 minutes cooldown per rule/component to prevent repeated hints
   private autoSuggestionsEnabled: boolean = true; // Master toggle to disable automatic guidance popups
@@ -137,7 +147,8 @@ export class GSenseBrowserEngine {
     preferredLevel?: AssistanceLevel,
     backtrackWindowMs?: number,
     cooldownPeriodMs?: number,
-    autoSuggestionsEnabled?: boolean
+    autoSuggestionsEnabled?: boolean,
+    repeatWindowMs?: number
   ): void {
     if (hesitationMs && hesitationMs > 0) {
       this.hesitationThresholdMs = hesitationMs;
@@ -157,6 +168,9 @@ export class GSenseBrowserEngine {
     if (typeof autoSuggestionsEnabled === 'boolean') {
       this.autoSuggestionsEnabled = autoSuggestionsEnabled;
     }
+    if (repeatWindowMs && repeatWindowMs > 0) {
+      this.repeatWindowMs = repeatWindowMs;
+    }
     this.notify();
   }
 
@@ -167,6 +181,7 @@ export class GSenseBrowserEngine {
       hesitationThresholdMs: this.hesitationThresholdMs,
       maxActiveTaskHesitationMs: this.maxActiveTaskHesitationMs,
       repeatAttemptsTrigger: this.repeatAttemptsTrigger,
+      repeatWindowMs: this.repeatWindowMs,
       backtrackWindowMs: this.backtrackWindowMs,
       cooldownPeriodMs: this.cooldownPeriodMs,
       autoSuggestionsEnabled: this.autoSuggestionsEnabled,
@@ -177,6 +192,8 @@ export class GSenseBrowserEngine {
           'Cutoff distinguishing active in-task dwell from away/idle time (default 30000ms). Dwells over 30s are marked idle.',
         repeatAttemptsTrigger:
           'Number of repeated clicks/attempts on the same component within a session window (default 3).',
+        repeatWindowMs:
+          'Documented time window in ms (default 30000ms) within which repeated actions must occur to qualify as a repeat struggle.',
         backtrackWindowMs:
           'Window in ms for detecting rapid navigation return to the previous screen (default 15000ms).',
         cooldownPeriodMs:
@@ -200,7 +217,7 @@ export class GSenseBrowserEngine {
       return { event: null, suggestion: null };
     }
 
-    const now = Date.now();
+    const now = typeof options.explicitTimestamp === 'number' ? options.explicitTimestamp : Date.now();
     const rawElapsedMs =
       typeof options.explicitHesitationMs === 'number'
         ? Math.max(0, options.explicitHesitationMs)
@@ -221,11 +238,18 @@ export class GSenseBrowserEngine {
       ? Math.min(rawElapsedMs, this.maxActiveTaskHesitationMs)
       : rawElapsedMs;
 
-    // Detect navigation backtracking (returning to preceding page within backtrack window)
+    // Detect navigation backtracking and reset repeat counters for other screens
     let effectiveEventType: EventType = options.eventType;
     let isCorrection = !!options.isCorrection;
 
     if (options.eventType === 'navigation') {
+      // Navigation resets repeat attempt counters for components belonging to other screens
+      for (const [key, record] of this.attemptMap.entries()) {
+        if (record.screenId !== options.screenId) {
+          this.attemptMap.delete(key);
+        }
+      }
+
       const historyLen = this.navigationHistory.length;
       if (historyLen >= 2) {
         const lastStep = this.navigationHistory[historyLen - 1];
@@ -245,9 +269,33 @@ export class GSenseBrowserEngine {
     }
 
     const targetKey = `${options.screenId}:${options.componentType}`;
-    const previousAttempts = this.attemptMap.get(targetKey) || 0;
-    const currentAttempt = previousAttempts + 1;
-    this.attemptMap.set(targetKey, currentAttempt);
+    let currentAttempt = 1;
+
+    if (options.eventType === 'action_success') {
+      // Success resets the repeat attempt counter for this component
+      this.attemptMap.delete(targetKey);
+      currentAttempt = 1;
+    } else {
+      const existing = this.attemptMap.get(targetKey);
+      if (existing) {
+        const elapsedSinceLast = now - existing.lastTimestamp;
+        if (elapsedSinceLast <= this.repeatWindowMs) {
+          currentAttempt = existing.count + 1;
+        } else {
+          // Documented time window expired, reset counter to 1
+          currentAttempt = 1;
+        }
+      } else {
+        currentAttempt = 1;
+      }
+
+      this.attemptMap.set(targetKey, {
+        count: currentAttempt,
+        lastTimestamp: now,
+        screenId: options.screenId,
+        componentType: options.componentType,
+      });
+    }
 
     const event: InteractionEvent = {
       id: 'evt_' + Math.random().toString(36).substring(2, 9),
@@ -374,8 +422,16 @@ export class GSenseBrowserEngine {
     };
   }
 
-  public resetAttemptCounter(screenId: string, componentType: string): void {
-    this.attemptMap.delete(`${screenId}:${componentType}`);
+  public resetAttemptCounter(screenId: string, componentType?: string): void {
+    if (componentType) {
+      this.attemptMap.delete(`${screenId}:${componentType}`);
+    } else {
+      for (const [key, record] of this.attemptMap.entries()) {
+        if (record.screenId === screenId) {
+          this.attemptMap.delete(key);
+        }
+      }
+    }
   }
 
   private isRuleInCooldown(ruleKey: string): boolean {

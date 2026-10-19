@@ -262,8 +262,8 @@ exe = EXE(
             </p>
 
             <div className="text-xs space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 text-slate-600 dark:text-slate-400">
-              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Supported Devices:</div>
-              <div>• Android: Samsung Galaxy, Google Pixel, Xiaomi Redmi, OnePlus, Motorola</div>
+              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1">Target Environments:</div>
+              <div>• Android: Chromium-based browsers (Chrome, Samsung Internet)</div>
               <div>• iOS / iPadOS: Safari Add to Home Screen</div>
               <div>• Standalone window, no browser chrome</div>
               <div>• Safe offline fallback (zero private cache)</div>
@@ -513,7 +513,7 @@ exe = EXE(
               </span>
             </div>
             <p className="leading-relaxed">
-              Tested on compatible Android devices including <strong>Samsung Galaxy</strong> (S, A, Z series), <strong>Google Pixel</strong>, <strong>Xiaomi Redmi</strong> devices (including Redmi 9, Note series running MIUI / HyperOS), <strong>OnePlus</strong>, <strong>Motorola</strong>, and other Android 8.0+ devices with an updated Chromium-based browser.
+              Designed for standards-compliant Android devices running Chromium-based browsers (e.g. <strong>Google Chrome</strong>, <strong>Samsung Internet</strong>). <em>Note:</em> Physical compatibility across specific hardware models has not been individually certified; PWA installation behavior depends on your browser engine, operating system version, and OEM background management policies.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

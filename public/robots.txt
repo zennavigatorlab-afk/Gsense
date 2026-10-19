@@ -13,4 +13,4 @@ Disallow: /profile
 Disallow: /dashboard/data-export
 Disallow: /api/
 
-Sitemap: https://g-sense.app/sitemap.xml
+Sitemap: https://gsense.vercel.app/sitemap.xml

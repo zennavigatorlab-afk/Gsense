@@ -189,6 +189,106 @@ assert(getLocalOfferedTips().length === 0, 'Offered tips storage must be empty')
 assert(getLocalFeedback().length === 0, 'Feedback storage must be empty');
 console.log('  ✓ Data sovereignty verified: pause halts recording; clearAllData completely empties storage.\n');
 
+// Test 8: Repeat-Attempt Detection Window, Expiration, Success Reset & Navigation Reset
+console.log('Test 8: Repeat-Attempt Window, Expiration, Success Reset & Navigation Reset...');
+engine.clearAllData();
+engine.configureThresholds(8000, 3, undefined, undefined, undefined, true, 5000); // 5000ms repeat window
+
+const baseTime = 1000000;
+// Step 1: Sequential attempts within the window
+const a1 = engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'form_screen',
+  componentType: 'save_btn',
+  eventType: 'repeat_attempt',
+  explicitTimestamp: baseTime,
+});
+assert(a1.event?.attemptCount === 1, `Expected attempt 1, got ${a1.event?.attemptCount}`);
+
+const a2 = engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'form_screen',
+  componentType: 'save_btn',
+  eventType: 'repeat_attempt',
+  explicitTimestamp: baseTime + 2000, // +2s (within 5s window)
+});
+assert(a2.event?.attemptCount === 2, `Expected attempt 2, got ${a2.event?.attemptCount}`);
+
+// Step 2: Expiration outside documented time window (+7s > 5s window)
+const aExpired = engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'form_screen',
+  componentType: 'save_btn',
+  eventType: 'repeat_attempt',
+  explicitTimestamp: baseTime + 9000, // +7s since last attempt
+});
+assert(aExpired.event?.attemptCount === 1, `Expected expired attempt to reset to 1, got ${aExpired.event?.attemptCount}`);
+
+// Step 3: Success Reset
+const a3 = engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'form_screen',
+  componentType: 'save_btn',
+  eventType: 'repeat_attempt',
+  explicitTimestamp: baseTime + 10000,
+});
+assert(a3.event?.attemptCount === 2, `Expected attempt 2, got ${a3.event?.attemptCount}`);
+
+// Action success on same component
+engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'form_screen',
+  componentType: 'save_btn',
+  eventType: 'action_success',
+  explicitTimestamp: baseTime + 11000,
+});
+
+// Next attempt should start fresh at 1
+const aAfterSuccess = engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'form_screen',
+  componentType: 'save_btn',
+  eventType: 'repeat_attempt',
+  explicitTimestamp: baseTime + 12000,
+});
+assert(aAfterSuccess.event?.attemptCount === 1, `Expected attempt count 1 after success reset, got ${aAfterSuccess.event?.attemptCount}`);
+
+// Step 4: Navigation Reset across screens
+engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'page_alpha',
+  componentType: 'filter_dropdown',
+  eventType: 'repeat_attempt',
+  explicitTimestamp: baseTime + 13000,
+});
+engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'page_alpha',
+  componentType: 'filter_dropdown',
+  eventType: 'repeat_attempt',
+  explicitTimestamp: baseTime + 14000,
+});
+
+// Navigate to page_beta
+engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'page_beta',
+  componentType: 'nav_bar',
+  eventType: 'navigation',
+  explicitTimestamp: baseTime + 15000,
+});
+
+// Return to page_alpha and click filter_dropdown -> should reset to 1
+const aAfterNav = engine.recordEvent({
+  sessionId: 's1',
+  screenId: 'page_alpha',
+  componentType: 'filter_dropdown',
+  eventType: 'repeat_attempt',
+  explicitTimestamp: baseTime + 16000,
+});
+assert(aAfterNav.event?.attemptCount === 1, `Expected attempt count 1 after navigation reset, got ${aAfterNav.event?.attemptCount}`);
+console.log('  ✓ Repeat-attempt window, expiration, success reset, and navigation reset verified.\n');
+
 console.log('==================================================================');
-console.log('     ✓ ALL 7/7 REAL ADAPTIVE ENGINE UPGRADE TESTS PASSED (100%)');
+console.log('     ✓ ALL 8/8 REAL ADAPTIVE ENGINE UPGRADE TESTS PASSED (100%)');
 console.log('==================================================================\n');

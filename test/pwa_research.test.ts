@@ -85,6 +85,12 @@ if (!indexHtmlContent.includes('name="theme-color" content="#0f172a"')) {
 if (!indexHtmlContent.includes('name="apple-mobile-web-app-capable" content="yes"')) {
   throw new Error('iOS standalone web app meta tag missing');
 }
+if (!indexHtmlContent.includes('rel="canonical" href="https://gsense.vercel.app"')) {
+  throw new Error('Canonical URL must point consistently to https://gsense.vercel.app');
+}
+if (indexHtmlContent.includes('href="https://g-sense.app"')) {
+  throw new Error('Unverified domain g-sense.app must not be used as canonical URL');
+}
 if (!indexHtmlContent.includes('google-site-verification" content="y7dA711cbtJ0OStNKa5L-Jwo5ck1XcVE_75tRQ9vg-s"')) {
   throw new Error('Previous Google Search Console verification tag was modified or lost');
 }
@@ -94,7 +100,7 @@ if (!indexHtmlContent.includes('google-site-verification" content="VCtFFd13OxycS
 if (indexHtmlContent.includes('CteqvUVzZV6uzMFs_YvtJV0gMBE3cAlaoy-LD-W5824')) {
   throw new Error('DNS TXT verification value must not be inserted into HTML');
 }
-console.log('  ✓ index.html includes mobile viewport, theme-color, apple-mobile-web-app-capable, and preserves both Search Console verification tags.');
+console.log('  ✓ index.html includes mobile viewport, theme-color, canonical URL (https://gsense.vercel.app), and Search Console verification tags.');
 passedTests++;
 
 // Test 5: Research Telemetry Privacy Invariants

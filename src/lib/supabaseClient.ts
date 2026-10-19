@@ -193,3 +193,127 @@ export const deleteLocalAccountAndData = (): void => {
   localStorage.removeItem(LOCAL_FEEDBACK_KEY);
   localStorage.removeItem(LOCAL_OFFERED_TIPS_KEY);
 };
+
+export interface DeleteAccountResult {
+  success: boolean;
+  mode: 'supabase' | 'local';
+  message: string;
+  error?: string;
+}
+
+/**
+ * Secure account deletion flow:
+ * - If Supabase is configured and user is authenticated:
+ *     1. Calls server-side /api/delete-account with verified session token
+ *     2. Or invokes delete_user_account RPC / cascades user records via RLS
+ *     3. Signs out of Supabase auth
+ *     4. Wipes local cache
+ *     5. Returns success: false if server deletion could not be completed
+ * - If in local demo mode:
+ *     Wipes local cache and reports local data removal
+ */
+export const deleteUserAccount = async (): Promise<DeleteAccountResult> => {
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        return {
+          success: false,
+          mode: 'supabase',
+          message: 'Failed to verify session for account deletion.',
+          error: sessionError.message,
+        };
+      }
+
+      if (!session || !session.user) {
+        deleteLocalAccountAndData();
+        return {
+          success: true,
+          mode: 'local',
+          message: 'No active cloud session found. Local profile and browser records were permanently purged.',
+        };
+      }
+
+      const userId = session.user.id;
+      let serverDeleted = false;
+
+      // 1. Try server-side deletion endpoint (/api/delete-account)
+      try {
+        const response = await fetch('/api/delete-account', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (response.ok) {
+          const resData = await response.json();
+          if (resData.success) {
+            serverDeleted = true;
+          }
+        }
+      } catch {
+        // Fallback to direct RPC or RLS deletes below
+      }
+
+      // 2. If server endpoint was unreachable, try Supabase RPC delete_user_account()
+      if (!serverDeleted) {
+        const { error: rpcError } = await supabase.rpc('delete_user_account');
+        if (!rpcError) {
+          serverDeleted = true;
+        } else {
+          // 3. Fall back to deleting user's associated records via RLS
+          const [fb, ls, ev, pr, pf] = await Promise.all([
+            supabase.from('assistance_feedback').delete().eq('user_id', userId),
+            supabase.from('learning_summaries').delete().eq('user_id', userId),
+            supabase.from('interaction_events').delete().eq('user_id', userId),
+            supabase.from('user_preferences').delete().eq('user_id', userId),
+            supabase.from('profiles').delete().eq('id', userId),
+          ]);
+
+          if (!fb.error && !ls.error && !ev.error && !pr.error && !pf.error) {
+            serverDeleted = true;
+          } else {
+            const err = fb.error || ls.error || ev.error || pr.error || pf.error;
+            return {
+              success: false,
+              mode: 'supabase',
+              message: 'Failed to delete account records from Supabase database.',
+              error: err?.message,
+            };
+          }
+        }
+      }
+
+      // 4. Sign out and wipe local storage
+      await supabase.auth.signOut().catch(() => {});
+      deleteLocalAccountAndData();
+
+      return {
+        success: true,
+        mode: 'supabase',
+        message: 'Your Supabase account and all associated cloud interaction records have been permanently deleted.',
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        mode: 'supabase',
+        message: 'An unexpected error occurred during account deletion.',
+        error: err?.message || String(err),
+      };
+    }
+  }
+
+  // Local fallback / demo mode
+  deleteLocalAccountAndData();
+  return {
+    success: true,
+    mode: 'local',
+    message: 'Local profile, preferences, and all browser interaction patterns have been permanently wiped from this device.',
+  };
+};

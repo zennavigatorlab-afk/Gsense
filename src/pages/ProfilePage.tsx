@@ -3,7 +3,8 @@ import { UserProfile, UserPreferences, AssistanceLevel, InteractionPace } from '
 import {
   saveLocalPreferences,
   saveLocalProfile,
-  deleteLocalAccountAndData,
+  deleteUserAccount,
+  isSupabaseConfigured,
   purgeLocalData
 } from '../lib/supabaseClient';
 import { learningEngine } from '../lib/learningEngine';
@@ -18,6 +19,7 @@ import {
   LogOut,
   Download,
   AlertTriangle,
+  AlertCircle,
   Play,
   Pause
 } from 'lucide-react';
@@ -53,6 +55,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       : learningEngine.getAutoSuggestionsEnabled()
   );
   const [savedNotice, setSavedNotice] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,16 +109,36 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
+    setDeleteError(null);
+    setDeleteNotice(null);
+
     if (
-      window.confirm(
-        'Confirm Account Deletion:\nAre you sure you want to delete your profile, preferences, and all collected interaction patterns? This action cannot be reversed.'
+      !window.confirm(
+        'Confirm Account Deletion:\nAre you sure you want to permanently delete your profile, preferences, and all collected interaction patterns? This action cannot be reversed.'
       )
     ) {
-      deleteLocalAccountAndData();
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteUserAccount();
+      if (!result.success) {
+        setDeleteError(result.error || result.message || 'Failed to complete server-side account deletion.');
+        setIsDeleting(false);
+        return;
+      }
+
       learningEngine.clearAllData();
-      onSignOut();
-      onNavigate('home');
+      setDeleteNotice(result.message);
+      setTimeout(() => {
+        onSignOut();
+        onNavigate('home');
+      }, 1500);
+    } catch (err: any) {
+      setDeleteError(err?.message || 'An unexpected error occurred during account deletion.');
+      setIsDeleting(false);
     }
   };
 
@@ -127,7 +152,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-              User Profile & Adaptation Preferences
+              User Profile &amp; Adaptation Preferences
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {profile.email} · Member since {new Date(profile.createdAt).toLocaleDateString()}
@@ -143,6 +168,44 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           <span>Sign Out</span>
         </button>
       </div>
+
+      {/* Backend & Cloud Sync Architecture Status */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4.5 dark:border-slate-800 dark:bg-slate-900/60 text-xs space-y-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <span className="font-semibold text-slate-900 dark:text-white">
+            Storage &amp; Cloud Sync Architecture
+          </span>
+          {isSupabaseConfigured() ? (
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Supabase Cloud Sync Active
+            </span>
+          ) : (
+            <span className="font-mono text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/40">
+              Local-First / Demo Mode (No Cloud Sync)
+            </span>
+          )}
+        </div>
+        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+          {isSupabaseConfigured()
+            ? 'Your profile and adaptation preferences sync securely to Supabase using Row-Level Security. Interaction events are calculated locally in your browser first; only structural telemetry syncs to your personal cloud record. Sensitive inputs are never captured.'
+            : 'G-SENSE is operating in local-first demo mode. Your profile, custom thresholds, and interaction pattern logs remain strictly on this device in browser localStorage and do NOT sync across devices or to any remote server.'}
+        </p>
+      </div>
+
+      {deleteError && (
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+          <span>{deleteError}</span>
+        </div>
+      )}
+
+      {deleteNotice && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+          <span>{deleteNotice}</span>
+        </div>
+      )}
 
       {savedNotice && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200 flex items-center gap-2">

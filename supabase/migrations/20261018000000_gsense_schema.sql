@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS public.interaction_events (
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   session_id TEXT NOT NULL,
   screen_id TEXT NOT NULL,
-  event_type TEXT NOT NULL CHECK (event_type IN ('navigation', 'repeat_attempt', 'hesitation_pause', 'correction', 'action_success', 'assistance_trigger')),
+  event_type TEXT NOT NULL CHECK (event_type IN ('navigation', 'repeat_attempt', 'hesitation_pause', 'correction', 'action_success', 'assistance_trigger', 'idle_pause', 'backtrack')),
   component_type TEXT NOT NULL,
   attempt_count INTEGER DEFAULT 1,
   hesitation_ms INTEGER DEFAULT 0,
