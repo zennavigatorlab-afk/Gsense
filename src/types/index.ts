@@ -9,6 +9,7 @@ export type EventType =
   | 'repeat_attempt'
   | 'hesitation_pause'
   | 'correction'
+  | 'backtrack'
   | 'action_success'
   | 'assistance_trigger'
   | 'idle_pause';
@@ -19,6 +20,7 @@ export interface UserProfile {
   displayName: string;
   avatarUrl?: string;
   learningStatus: LearningStatus;
+  isConsentGiven?: boolean;
   createdAt: string;
 }
 
@@ -31,6 +33,7 @@ export interface UserPreferences {
   cameraSensingEnabled: boolean;
   theme: 'light' | 'dark' | 'system';
   updatedAt: string;
+  autoSuggestionsEnabled?: boolean;
 }
 
 export interface InteractionEvent {
@@ -44,11 +47,14 @@ export interface InteractionEvent {
   hesitationMs: number;
   isCorrection: boolean;
   isIdle: boolean; // true if elapsed time exceeded active threshold or tab was inactive
+  isSimulation?: boolean; // explicitly distinguish simulated events from real interactions
   timestamp: number;
 }
 
 export interface LearningSummary {
   totalEvents: number;
+  realEventsCount?: number;
+  simulatedEventsCount?: number;
   activeTaskEvents: number;
   avgHesitationMs: number; // Excludes idle time (>30s or inactive tab)
   totalIdleIntervals: number;
@@ -66,6 +72,7 @@ export interface LearningSummary {
 export interface OfferedTipRecord {
   id: string;
   promptId: string;
+  ruleKey?: string;
   title: string;
   triggerReason: string;
   screenId: string;
@@ -87,10 +94,13 @@ export interface AssistanceFeedback {
 
 export interface AdaptiveSuggestion {
   id: string;
+  ruleKey?: string;
   title: string;
   message: string;
+  shortHint?: string;
+  simpleExplanation?: string;
+  steps?: string[];
   level: AssistanceLevel;
   actionText?: string;
-  steps?: string[];
   triggerReason: string;
 }

@@ -114,7 +114,10 @@ export default function App() {
     learningEngine.configureThresholds(
       preferences.hesitationThresholdMs,
       preferences.repeatAttemptsTrigger,
-      preferences.assistanceLevel
+      preferences.assistanceLevel,
+      undefined,
+      undefined,
+      preferences.autoSuggestionsEnabled !== false
     );
 
     const unsubscribe = learningEngine.subscribe(() => {
@@ -170,6 +173,14 @@ export default function App() {
   const handleUpdatePreferences = (newPrefs: UserPreferences) => {
     setPreferences(newPrefs);
     setCameraSensingEnabled(newPrefs.cameraSensingEnabled);
+    learningEngine.configureThresholds(
+      newPrefs.hesitationThresholdMs,
+      newPrefs.repeatAttemptsTrigger,
+      newPrefs.assistanceLevel,
+      undefined,
+      undefined,
+      newPrefs.autoSuggestionsEnabled !== false
+    );
   };
 
   return (

@@ -47,6 +47,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [hesitationThresholdMs, setHesitationThresholdMs] = useState(preferences.hesitationThresholdMs);
   const [repeatAttemptsTrigger, setRepeatAttemptsTrigger] = useState(preferences.repeatAttemptsTrigger);
   const [learningStatus, setLearningStatus] = useState(profile.learningStatus);
+  const [autoSuggestionsEnabled, setAutoSuggestionsEnabled] = useState(
+    typeof preferences.autoSuggestionsEnabled === 'boolean'
+      ? preferences.autoSuggestionsEnabled
+      : learningEngine.getAutoSuggestionsEnabled()
+  );
   const [savedNotice, setSavedNotice] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
@@ -66,14 +71,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       interactionPace,
       hesitationThresholdMs,
       repeatAttemptsTrigger,
+      autoSuggestionsEnabled,
       updatedAt: new Date().toISOString(),
     };
     saveLocalPreferences(updatedPrefs);
     onUpdatePreferences(updatedPrefs);
 
     // Update engine runtime thresholds
-    learningEngine.configureThresholds(hesitationThresholdMs, repeatAttemptsTrigger, assistanceLevel);
+    learningEngine.configureThresholds(
+      hesitationThresholdMs,
+      repeatAttemptsTrigger,
+      assistanceLevel,
+      undefined,
+      undefined,
+      autoSuggestionsEnabled
+    );
     learningEngine.setPaused(learningStatus === 'paused');
+    learningEngine.setAutoSuggestionsEnabled(autoSuggestionsEnabled);
 
     setSavedNotice(true);
     setTimeout(() => setSavedNotice(false), 2500);
@@ -283,6 +297,31 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
             >
               Configure Camera
+            </button>
+          </div>
+
+          {/* Automatic Guidance Toggle */}
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold text-slate-900 dark:text-white">
+                Automatic Guidance Suggestions
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                {autoSuggestionsEnabled
+                  ? 'Non-intrusive contextual hints appear automatically when interaction friction rules trigger.'
+                  : 'Automatic popups are disabled. You can still inspect patterns manually in the Dashboard.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAutoSuggestionsEnabled(!autoSuggestionsEnabled)}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer ${
+                autoSuggestionsEnabled
+                  ? 'bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
+                  : 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+              }`}
+            >
+              <span>{autoSuggestionsEnabled ? 'Enabled' : 'Disabled'}</span>
             </button>
           </div>
 
